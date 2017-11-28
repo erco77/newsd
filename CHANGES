@@ -1,0 +1,169 @@
+newsd -- Change Log
+-------------------
+
+1.45 -- ??
+        - Fix for communication problem w/opera 9 news readers
+        - Fix dot-stuffing issue
+	- STR#6: Added simple 'server-wide' authentication
+	- sprintf() -> snprintf()
+	- code made 80 column compliant 
+	- Added popen() return value check in Server.C
+	- Removed cruft
+        - Denial of service fix: "GROUP fltk" would create a 
+          .info file in the fltk spool dir, causing 'LIST'
+          to no longer list the fltk.xxx news dirs.
+
+1.44 -- October 19, 2005
+
+	- Method name change: ReformatArticle -> ParseArticle
+	- Important fix to multiline headers being split during
+	  header reordering
+	- STR#15: Path: now maintained and passed through mail
+	  gateway
+	- STR#16: Mailgateway: "From" field now renamed to
+	  "X-Original-From: "
+
+1.44rc4 -- Dec 7, 2004
+
+	- Improved the 'HELP' command messages
+	- Article key/val parser now uses strspn()
+	- Added XOVER field sanitizer to prevent \t being
+	  mistaken as an xover field delimiter
+	- Converted Article class to use STL strings internally
+	- Fixed problem with multiline header parsing, cited
+	  RFC's
+	- Fixed bug w/first msg of new group not showing up:
+	  NewGroup() creates .info file via BuildInfo(), first
+	  msg starts msg count at 1
+	- Documented error handling for methods returning errors
+	- Added article start/end range checks to
+	  HEAD/BODY/ARTICLE/STAT, eg. '423 No Such Article In
+	  Group'
+	- Server class uses new Overview() method with string
+	  return type.
+	- Various important fixes to -mailgateway; removed
+	  redundant header loop (looks like a diff error crept
+	  in), missing \n at end of Errors-To:, and added error
+	  detection + debug output for popen()/pclose()
+	- Fixed NULL checks for char* oriented messageid/from
+	- Changed the NewsHostname and LogFile configuration
+	  directives to ServerName and ErrorLog, respectively to
+	  match Apache.
+
+1.44rc3 -- Nov 17, 2004
+
+	- The makefile incorrectly tried to strip the
+	  inn2newsd.sh script on installation (STR #13)
+	- The generated date reported the wrong day of the week
+	  (off by 1 day)
+	- Added "-t" option to default sendmail command.
+	- Added "-d" option to run newsd in the foreground with
+	  full debugging to stderr.
+	- Added daemonization when running in the background:
+	  redirect stdio and call setsid().
+	- Changed default for "Listen" to "Listen nntp".
+	- Fixed getservbyname() error message.
+	- Small fixes to echo announcements in news.sh
+	- Added extra error checking for unknown args + conf
+	  commands
+	- You can now log to a program by starting the log file
+	  name with a pipe ("|" - STR #9)
+	- Added MaxLogSize to newsd.conf and log rotation stuff
+	  (STR #9)
+	- Implemented message lookups by message ID (STR #5)
+	- The Server class no longer uses the "find" command to
+	  get a list of newsgroups (STR #2)
+	- Group::Post() didn't start at the last message, so it
+	  could reuse deleted message IDs and cause the end ID
+	  to be incorrect (STR #3).
+	- Group::BuildInfo() is now implemented so that it is no
+	  longer neccessary to create the .info file in the
+	  inn2newsd.sh script (STR #4)
+
+1.44rc2 -- Nov 02, 2004
+
+	- First public release
+	- Cleaned up MacOS X and Linux startup scripts
+	- Documentation fixes
+	- Added pointers to web site
+	- Newsd now forks into the background
+	- Now change the ownership of the log files to the
+	  news user
+	- "newsd -mailgateway group" now overrides "postok"
+	  configuration setting
+	- No longer use strcpy() with overlapping buffers
+	- Added inn2newsd.sh script for converting INND news
+	  servers to Newsd
+
+1.44rc1 -- Jul 11, 2004 
+
+	- Now provide autoconf-based configure script for
+	  building and installing.
+	- Now provide init-style startup/shutdown script.
+	- Added spam filter support.
+	- Added global configuration file newsd.conf and man
+	  pages.
+	- Added new Configuration class to support logging to
+	  stderr, syslog, or a file, along with loading
+	  newsd.conf.
+	- Added support for non-root execution.
+	- Fixed end-of-message state machine code.
+	- Removed dependence on iostream
+
+1.43 -- Jun 01, 2004
+
+	- Preserve Content-Type and Mime-Version: across to
+	  email gateway, to ensure mime attachments cross over
+	  to the mail gateway correctly.
+	- added newsd command line option -port
+
+1.42 -- May 24, 2004
+
+	- Check for X-Loop: and deliver to Errors-To: in case
+	  remote bounces message back to sender, ie. doesn't
+	  respect "Errors-To:" !
+	- Added 'DeadLetter()'
+	- Added 'X-Newsd-Loop:' header to avoid mail loops when
+	  delivering errors
+
+1.41 -- Sep 01, 2003
+
+	- Removed 3dsite specific code (hard coded hostnames!)
+	- Moved static functions from newsd.C into the Group
+	  class to 'clean up' code.
+
+1.40 -- Aug 07, 2003
+
+	- Changed 'ccpost' to allow multiple lines, for
+	  unlimited names
+	- Fixed problem where Message-Id casing (ID vs Id) was
+	  causing two Message-IDs to be in messages.
+	- Enabled ARTICLE <msgid>, HEAD <msgid> etc, so that ^U
+	  would work in mozilla to view message header text.
+
+1.30 -- June 02, 2003
+
+	- Added GCC3 flag to handle the new 'using namespace
+	  std;' stuff.
+	- Added platform specific Makefiles
+	- Tested compiles on Redhat 9.0, OSX 10.2.6, and BSDI
+	  3.1
+
+1.20 -- May 09, 2003
+
+	- Changed outbound email to use Bcc instead of To
+	- Added version to gatewayed mail and -help
+	- Added -mailgateway, modified docs
+	- Added "replyto" and "voidemail" to .config file and
+	  'newsd -newgroup'
+	- Removed extraneous .config parsing code from .info's
+	  parser
+	- Moved ReformatArticle from Server -> Group class
+
+1.10 -- Jan 08, 2003
+
+	- Added DATE, -t timeout, -c maxchild, -d
+
+1.00 -- Jan 02, 2003
+
+	- First release -- merry xmas 2003!

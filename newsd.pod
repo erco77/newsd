@@ -1,0 +1,218 @@
+=pod
+
+=head1 NAME
+
+newsd - erco's simple nntp news server
+
+=head1 SYNOPSIS
+
+=over
+
+=item B<newsd> [ -c I<config-file> ] [ -d ] [ -f ]
+
+=item B<newsd> -mailgateway I<group>
+
+=item B<newsd> -newgroup
+
+=item B<newsd> -rotate
+
+=back
+
+=head1 DESCRIPTION
+
+Newsd(8) is a standalone local NNTP news server for private
+newsgroup serving on a single server.  It is useful for serving
+private newsgroup(s) to an intranet or the Internet and can act
+as a simple mail gateway, however it does not interface with
+other news servers and cannot manage distributed news feeds,
+i.e. Usenet news.
+
+Each client connection forks a child, and the child remains
+running until the connection is closed, typically until the user
+closes their news reader which can mean a long time.
+
+Options supported by newsd:
+
+=over
+
+=item -c configfile
+
+Use configfile to configure the news server.
+
+=item -d
+
+Run in the foreground with the log level set to "debug" and all
+log messages going to "stderr".
+
+=item -f
+
+Run in the foreground; normally newsd will put itself in the background 
+once it has loaded the configuration  file  and  setup  its networking 
+functions.
+
+=item -mailgateway <group>
+
+Used in /etc/aliases to gateway emails to a newsgroup. 
+See L<Configuring a Mail Gateway> below.
+
+=item -newgroup
+
+Interactively prompts for the creation of a new newsgroup.
+Administrators should use this to create a new newsgroup. 
+See L<Creating New Groups> for an example session.
+
+=item -rotate
+
+Forces the log file to be rotated.
+
+=back
+
+=head1 ADMINISTRATION
+
+The most common thing to administer are the creation and removal
+of newsgroups.
+
+=head2 Creating New Groups
+
+New newsgroups can be created on the fly while the I<newsd>
+daemon is running using the  following commands:
+
+    newsd -newgroup
+
+You will be prompted for the new group's information.
+Here's an example interactive session; '-->' indicates 
+administrator's keyboard input:
+
+    -->  # newsd -newgroup
+    Enter the new group's name (eg. 'electronics.ttl'):
+    -->  erco.fovicks
+
+    Is posting to this group allowed? (Y/n):
+    -->  y
+
+    Maximum #lines for postings, '0' if no maximum (default=1000):
+    -->  1000
+
+    Description of newsgroup in one short line, '-' if none
+    -->  Discussion of all things FOVICKS.
+
+    Administrator's email address for group, '-' if none (default='-'):
+    -->  erco@3dsite.com
+
+    CC all postings to this email address, '-' if none (default='-')
+    -->  erco@3dsite.com
+
+    *** New group erco.fovicks was created.
+    *** Use your news reader to post some test messages.
+    *** You can edit /var/spool/news/erco/fovicks/.config later
+    to make changes.
+
+    #
+
+=head2 Removing Groups
+
+To remove a newsgroup, simply run 'rm -rf' on that group's
+spooler directory. I<newsd> will detect this automatically.
+
+=head2 Configuring a Mail Gateway
+
+To correctly configure a mail gateway to the group:
+
+1) Add a 'replyto' line in the newsgroup's .config file,
+e.g. /usr/spool/news/rush/general/.config:
+
+    replyto rush.general@yourdomain.com
+
+2) Create an entry in /etc/aliases, e.g.:
+
+    rush.general: "|newsd -mailgateway rush.general"
+
+being sure to invoke newaliases(1) to make the change
+take effect.
+
+3) Make sure I<newsd> is setuid 'root', eg:
+
+    # ls -la newsd
+    -rwsr-xr-x  1 root  mail   470437 Jan  8 02:31 newsd
+    ^             ^^^^  ^^^^
+    |              |     |
+    Setuid       Owner  Group
+
+Use 'chown root:mail newsd' and 'chmod 4750 newsd' to enforce 
+these permissions. If your mail server uses a group other than
+"mail", use the corresponding group name so that only the mail
+server and root can execute the newsd program.
+
+Send a test email to rush.general@yourdomain.com to see if the
+message gets added to the group. If it doesn't, check for a
+bounced message.
+
+=head1 SEE ALSO
+
+=over
+
+=item L<newsd.conf(5)> -- configuration files for erco's simple nntp news server
+
+=item RFC 977 -- NNTP Protocol
+
+=item RFC 2890 -- NNTP extensions
+
+=item RFC 1036 -- Usenet news messages format
+
+=back
+
+=head1 LIMITATIONS
+
+By design, I<newsd> does NOT manage usenet news feeds. It
+acts as a private news server only. Remote readers and posters
+can be anywhere on the internet. But feeding news to, or pulling
+news from other servers is neither implemented nor planned.
+
+Authentication is not currently implemented.
+
+Some NNTP commands are not supported, including searching by
+message id. Grep the code for 'TODO' to see what needs to be
+added.
+
+There is currently no way to constrain posting or readership 
+to particular IP addresses or domains.
+
+There are probably ways to cause a denial of service.
+
+=head1 REPORTING BUGS
+
+Report bugs using the form at "http://www.easysw.com/~mike/newsd/".
+
+=head1 SUPPORTED NEWS READERS
+
+I<newsd> has been tested with Netscape, Mozilla, Microsoft
+Outlook and the tin(1) threaded news readers only. It should
+work with most NNTP news readers, however.
+
+=head1 AUTHORS
+
+=over
+
+=item Greg Ercolano, Topanga CA
+
+=item Michael Sweet, Hollywood, MD
+
+=back
+
+=head1 COPYRIGHT
+
+I<newsd> is copyright 2002-2004 by Greg Ercolano and Michael
+Sweet. This program is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+=head1 NO WARRANTY
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+=cut
+

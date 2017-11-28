@@ -1,0 +1,5 @@
+# FreeBSD settings
+CXX          = g++
+SPOOL_DIR   := /var/spool/newsd
+CONFIG_FILE := /etc/newsd.conf
+SENDMAIL    := /usr/sbin/sendmail

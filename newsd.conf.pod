@@ -1,0 +1,380 @@
+=head1 NAME
+
+newsd.conf - configuration files for erco's simple nntp news server
+
+=head1 DESCRIPTION
+
+I<Newsd(8)> is a standalone local NNTP news server for private
+newsgroup serving on a single server.  It is useful for serving
+private newsgroup(s) to an intranet or the Internet and can act
+as a simple mail gateway, however it does not interface with
+other news servers and cannot manage distributed news feeds,
+i.e. Usenet news.
+
+I<Newsd> uses three types of configuration files for each
+instance of the server: a global configuration file called
+"newsd.conf", a per-group configuration file called ".config",
+and a per-group status file called ".info".
+
+=head1 THE NEWSD.CONF FILE
+
+By default, I<newsd> reads the file /etc/newsd.conf
+to obtain the global configuration for the server. The file is
+simple text and uses the "#" character to start comments. Each
+configuration line consists of a case-insensitive directive and
+a value separated by whitespace, for example:
+
+    ServerName foo.bar.com
+
+The following directives are supported:
+
+=over
+
+=item ErrorLog value
+
+
+Specifies the file to use for logging information, errors, and
+debugging information. "stderr" specifies that the messages
+should be sent to the standard error file. "syslog" specifies
+that the messages should be logged via the syslog interface. If
+I<value> begins with the pipe (|) character, the rest of the
+value is treated as a command to pipe the error messages into.
+Otherwise, I<value> is treated as an absolute filename. The
+default is "stderr".
+
+=item HostnameLookups value
+
+When a client connects to the news server, this directive
+controls whether the server looks up the client's IP address.
+I<Value> can be "off" to disable IP address lookups (the IP
+address will be logged instead), "on" to enable IP address
+lookups, or "double" to enable IP address lookup and
+verification. The default is "off".
+
+=item Listen address:port
+
+=item Listen port
+
+Listens on the specified address and/or port number for new
+connections. I<Address> can be an IP address, hostname, or "*"
+to specify the "any" address; if no address is specified, "*" is
+assumed. I<Port> can be a port number or TCP service name. The
+default is to listen on address "*" (any) and port "nntp" (119).
+
+=item LogLevel value
+
+
+Specifies the amount of information to log; "error" specifies
+that only error messages should be logged. "info" specifies that
+informational and error messages should be logged. "debug"
+specifies that debugging, informational, and error messages
+should be logged. The default is "info".
+
+=item MaxClients number
+
+
+Specifies the maximum number of simultaneous clients. If
+I<number> is 0, then there is no limit. The default is 0.
+
+=item MaxLogSize value
+
+
+Specifies the maximum size for the newsd log file before it's
+automatically rotated. Value is in bytes. A value of 0 disables 
+automatic size checks. The default is 1000000.
+
+=item ServerName name
+
+
+Specifies the hostname that is reported to clients. The default
+is the name reported by I<hostname(1)>.
+
+=item SendMail command
+
+
+Specifies the command to use when sending mail messages. The
+default is "/usr/local/sbin/sendmail".
+
+=item SpoolDir directory
+
+
+Specifies the root directory for newsgroup files and directories.
+The default is "/var/spool/newsd".
+
+=item Timeout seconds
+
+
+Specifies the number of seconds to keep an idle news client
+connection open; specify 0 to disable the idle timeout. The
+default is 43200 seconds (12 hours).
+
+=item User name
+
+
+Specifies the user account the I<newsd> process will run
+under. The default user account is "news".
+
+=item Auth.User username
+
+=item Auth.Pass password
+
+=item Auth.Protect read|post|all
+
+=item Auth.Sleep seconds
+
+Sets the username and password used to authenticate access to the news server.
+Auth.Protect sets which operations the user/password protects; "read" protects
+read access only, "post" protects posting access only, "all" protects both read
+and post access.
+
+To disable authentication completely, set Auth.User, Auth.Pass and
+Auth.Protect to dash (-).
+
+Auth.Sleep sets the delay (in seconds) between failed attempts. [default=5]
+
+Example: Leaves reading and posting 'open', without any authentication:
+
+    Auth.User      -
+    Auth.Pass      -
+    Auth.Protect   -
+
+Example: Protects posting with the username 'foo' password 'bar', 
+while allowing anonymous read access:
+
+    Auth.User      foo
+    Auth.Pass      bar
+    Auth.Protect   post
+
+Example: Protects reading and posting with the username 'foo' password 'bar':
+
+    Auth.User      foo
+    Auth.Pass      bar
+    Auth.Protect   all
+
+=item NoRecurseMsgDir [yes|no]
+
+If enabled, prevents newsd from looking for subgroups in dirs that contain
+messages.
+
+When the message dirs are large (have many articles), it prevents some NNTP
+operations from having to walk these large dirs.
+
+Disable if you plan to have groups that contain msgs AND subgroups.
+Otherwise, leave enabled to help NNTP commands (eg. "LIST") respond
+quickly when groups have many articles.
+
+=item MsgModDirs [yes|no]
+
+Optimization: save articles in subdirs modulus 1000
+
+Use this if groups will contain many thousands of articles.
+Helps prevent OS having to walk large linear directories of articles.
+Enabling this feature ensures there are no more than 1000 articles
+in a dir at a time.
+
+So when disabled, articles are saved this way:
+
+    /path/fltk/general/0/{1,2,3..99998,99999,100000,100001..}
+
+..and when this feature is enabled, articles are saved this way:
+
+    /path/fltk/general/0/{1,2,3..998,999}
+    /path/fltk/general/1000/{1000,1001,1002..1998,1999}
+    /path/fltk/general/2000/{2000,2001,2002..2998,2999}
+    ..etc..
+
+If enabled, then groups cannot have entirely numeric names (eg. "alt.1000"),
+to prevent newsd from confusing message dirs with group names.
+
+=back
+
+=head1 NEWSGROUP FILES AND DIRECTORY
+
+The /var/spool/news directory contains all the newsgroups and
+articles with one file per article and one directory per
+newsgroup.
+
+
+
+The directory hierarchy dictates the available news 
+groups, e.g.
+
+    /var/spool/news/rush/general
+
+is the directory for the 'rush.general' news group, and
+in that directory will be one file per news article, each
+filename being the article's number, eg:
+
+    /var/spool/news/rush/general/1
+    /var/spool/news/rush/general/2
+    /var/spool/news/rush/general/3
+
+would be the pathnames for the three news articles whose
+article numbers are 1, 2 and 3. Each article contains the
+complete ascii text of the article, including the article's
+header and message body, as per RFC 1036.
+
+
+
+The directory permissions should be:
+
+    chown -R news.news /var/spool/news
+    find /var/spool/news -type d -exec chmod 755 {} \;
+    find /var/spool/news -type f -exec chmod 644 {} \;
+
+Each active newsgroup's directory has its own .config file. For
+example, the newsgroup 'rush.general' would have a .config file
+called:
+
+    /var/spool/news/rush/general/.config
+
+which might look like:
+
+    description Rush render queue discussion group
+    creator     news@news.domain.com
+    postok      1
+    postlimit   1000
+    ccpost      erco@domain.com
+    replyto	-
+
+Any newsgroup directory that does I<not> have a .config file 
+will not show up in users' news readers.
+
+Manual modification of these files should be done carefully  if
+the I<newsd> daemon is running. Do the following to prevent
+I<newsd> from loading a file while it is being edited:
+
+1) Make a copy of the file called ".config.new".
+
+2) Modify the copy.
+
+3) Rename the copy to ".config" to make it take effect.
+
+=head1 THE .CONFIG FILE FORMAT
+
+Each group's .config file is in a simple plain text format similar
+to newsd.conf:
+
+=over
+
+=item description text
+
+Specifies the one line description of this group, which shows up
+when people first subscribe to the newsgroup.
+
+=item creator email-address
+
+Specifies the email address of the owner of this group. Where
+mail should be sent regarding questions about the maintenance
+and administration of the group. This address is also used as
+the Errors-To: address for all email messages sent by
+\fRnewsd\fB.
+
+=item postok value
+
+
+Controls whether articles can be posted to this group. "0"
+indicates posting is not allowed (read-only group) while "1"
+indicates anyone can post to this group. The default value is
+"1".
+
+=item postlimit number-lines
+
+
+Specifies the maximum number of lines in an article. Articles
+will be rejected if they exceed this value. Set this value to
+"0" to disable the limit. The default limit is "1000".
+
+=item ccpost address[,address,...]
+
+
+=item ccpost -
+
+
+Sets the list of email addresses to be cc'ed whenever a posting
+is made to the group. If set to '-', no email is sent. A single
+line of addresses may not exceed 255 characters; to make longer
+lists of addresses, use separate lines, eg:
+
+    ccpost a@foo.com,b@foo.com,c@foo.com
+    ccpost d@foo.com
+
+Or to make things more readable, use one address per line:
+
+    ccpost a@foo.com
+    ccpost b@foo.com
+    ccpost c@foo.com
+
+The default is "-".
+
+=item replyto email-address
+
+=item replyto -
+
+Specifies an email address for the Reply-To header. This forces
+replies to be sent to the specifies address, typically a mail
+gateway back to the newsgroup. If set to "-", no Reply-To header
+will be sent. The default is "-".
+
+=back
+
+=head1 .INFO FILES
+
+I<newsd> automatically creates and maintains little ".info"
+files in each active group's directory. Each file maintains
+runtime information about that group's news articles.
+
+Normally these files are automatically created and maintained, 
+and should not be administered by hand unless manually fixing 
+a problem, in which case the daemon should not be running.
+
+=head1 SEE ALSO
+
+=over
+
+=item newsd(8) -- erco's simple nntp news server
+
+=item RFC 977 -- NNTP Protocol
+
+=item RFC 2890 -- NNTP extensions
+
+=item RFC 1036 -- Usenet news messages format
+
+=back
+
+=head1 REPORTING BUGS
+
+Report bugs using the form at "http://www.easysw.com/~mike/newsd/".
+
+=head1 SUPPORTED NEWS READERS
+
+I<newsd> has been tested with Netscape, Mozilla, Microsoft
+Outlook and the tin(1) threaded news readers only. It should
+work with most NNTP news readers, however.
+
+=head1 AUTHORS
+
+=over
+
+=item Greg Ercolano, Topanga CA
+
+=item Mike Sweet, Hollywood, MD
+
+=back
+
+=head1 COPYRIGHT
+
+I<newsd> is copyright 2002-2004 by Greg Ercolano and Michael
+Sweet. This program is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+=head1 NO WARRANTY
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+=cut
