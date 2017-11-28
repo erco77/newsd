@@ -253,8 +253,8 @@ int MailGateway(const char *groupname)
 	}
     }
 
-    {for (int t=0; t<head.size(); t++) { G_conf.LogMessage(L_DEBUG, "Gateway Post: --- head[%03d]: '%s'\n", t, head[t].c_str()); } }
-    {for (int t=0; t<body.size(); t++) { G_conf.LogMessage(L_DEBUG, "Gateway Post: --- body[%03d]: '%s'\n", t, body[t].c_str()); } }
+    {for (uint t=0; t<head.size(); t++) { G_conf.LogMessage(L_DEBUG, "Gateway Post: --- head[%03d]: '%s'\n", t, head[t].c_str()); } }
+    {for (uint t=0; t<body.size(); t++) { G_conf.LogMessage(L_DEBUG, "Gateway Post: --- body[%03d]: '%s'\n", t, body[t].c_str()); } }
 
     // POST ARTICLE
     //    Don't affect 'current group' or 'current article'.

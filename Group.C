@@ -128,7 +128,6 @@ int Group::BuildInfo(int dolock)
 
                 DIR *modulus_dir;
                 struct dirent *modulus_dent;
-                struct stat modulus_fileinfo;
                 string modulus_filename;
 
                 // Descend into 'modulus dir'
@@ -1019,7 +1018,7 @@ int Group::ParseArticle(string &msg, vector<string>&head, vector<string>&body)
 
     if ( G_conf.LogLevel() == L_DEBUG )
     {
-        int t;
+        uint t;
         for (t=0; t<head.size(); t++)
             { G_conf.LogMessage(L_DEBUG, "ParseArticle: --- head[%03d]: '%s'\n", t, head[t].c_str()); }
         for (t=0; t<body.size(); t++)

@@ -118,7 +118,7 @@ void AllGroups(vector<string>& groupnames, const char *subdir)
     struct dirent *dent;
     struct stat fileinfo;
     string dirname, filename, newsubdir;
-    char groupname[LINE_LEN], *ptr;
+    char groupname[LINE_LEN];
 
 
     dirname = G_conf.SpoolDir();
@@ -874,7 +874,6 @@ int Server::CommandLoop(const char *overview[])
 			MODE_CRLF_DOT		// received "<CRLF>."
 		      };
 	    Mode mode = MODE_NORMAL;
-	    int ldot = 0;
 	    char c;
 	    string msg;
 
