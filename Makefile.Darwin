@@ -1,0 +1,8 @@
+# OSX settings
+CXX          = g++ -Wall
+BIN_DIR     := /usr/sbin
+CONFIG_FILE := /etc/newsd.conf
+SPOOL_DIR   := /var/spool/newsd
+LOG_DIR     := /var/log
+MAN_DIR     := /usr/share/man/man8
+SENDMAIL    := /usr/sbin/sendmail
