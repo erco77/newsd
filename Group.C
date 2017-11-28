@@ -784,7 +784,7 @@ int Group::Post(const char *overview[],
 	head.push_back(misc);
 
         // Only set Message-ID: if client didn't specify it
-	if ( !GetHeaderValue(head, "Message-ID:") )
+	if ( GetHeaderValue(head, "Message-ID:") == NULL )
         {
             sprintf(misc, "Message-ID: <%lu-%s@%s>",
                 (unsigned long)msgnum,
@@ -794,7 +794,7 @@ int Group::Post(const char *overview[],
         }
 
         // Only set Lines: if client didn't specify it
-	if ( !GetHeaderValue(head, "Lines:") )
+	if ( GetHeaderValue(head, "Lines:") == NULL )
         {
             sprintf(misc, "Lines: %u",
                 (unsigned int)body.size());
