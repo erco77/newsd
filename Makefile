@@ -9,6 +9,7 @@ CXXFLAGS += -DSENDMAIL=\"$(SENDMAIL)\"
 CXXFLAGS += -g
 LDFLAGS   =
 NROFF     = nroff
+POD2MAN   = pod2man --center "newsd Documentation"
 VERSION   = `cat VERSION.H | sed 's/^[^"]*"//' | sed 's/"//'`
 
 # Default build
@@ -45,10 +46,8 @@ newsd:  newsd.o Article.o Configuration.o Group.o Server.o
 
 # Build man pages
 man: newsd.pod newsd.conf.pod
-	pod2man --center "newsd Documentation" --section=8 newsd.pod | \
-	    $(NROFF) -man > newsd.8
-	pod2man --center "newsd Documentation" --section=8 newsd.conf.pod | \
-	    $(NROFF) -man > newsd.conf.8
+	$(POD2MAN) --section=8 newsd.pod      | $(NROFF) -man > newsd.8
+	$(POD2MAN) --section=8 newsd.conf.pod | $(NROFF) -man > newsd.conf.8
 
 # Build html pages
 html: newsd.pod newsd.conf.pod
@@ -57,21 +56,21 @@ html: newsd.pod newsd.conf.pod
 
 # Install
 install: newsd man html
-	cp newsd  ${BIN_DIR}/newsd
-	chmod 755 ${BIN_DIR}/newsd
-	cat newsd.conf |					  \
-	    sed 's%^ErrorLog.*%ErrorLog ${LOG_DIR}/newsd.log%'	| \
-	    sed 's%^SendMail.*%SendMail ${SENDMAIL} -t%' 	| \
-	    sed 's%^SpoolDir.*%SpoolDir ${SPOOL_DIR}%'		| \
-	    cat > ${CONFIG_FILE}
-	cp newsd.8      ${MAN_DIR}
-	cp newsd.conf.8 ${MAN_DIR}
+	cp newsd  $(BIN_DIR)/newsd
+	chmod 755 $(BIN_DIR)/newsd
+	cat newsd.conf | sed 's%^ErrorLog.*%ErrorLog $(LOG_DIR)/newsd.log%'	| \
+	                 sed 's%^SendMail.*%SendMail $(SENDMAIL) -t%' 		| \
+	                 sed 's%^SpoolDir.*%SpoolDir $(SPOOL_DIR)%'		| \
+	                 cat > $(CONFIG_FILE)
+	@echo Installing manpages in $(MAN_DIR)
+	cp newsd.8      $(MAN_DIR)
+	cp newsd.conf.8 $(MAN_DIR)
 
 # Undo whatever install did
 uninstall: FORCE
-	-rm ${BIN_DIR}/newsd
-	-rm ${CONFIG_FILE}
-	-rm ${MAN_DIR}/newsd.8
-	-rm ${MAN_DIR}/newsd.conf.8
+	-rm $(BIN_DIR)/newsd
+	-rm $(CONFIG_FILE)
+	-rm $(MAN_DIR)/newsd.8
+	-rm $(MAN_DIR)/newsd.conf.8
 
 FORCE:

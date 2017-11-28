@@ -115,9 +115,55 @@ int RunAs()
     return(err);
 }
 
+// CREATE NEWSD SPOOL DIRECTORY (IF IT DOESNT ALREADY EXIST)
+//     Returns:
+//         0 on success (dir exists or was created OK)
+//        -1 on error, prints reason on stderr
+//     
+int CreateSpoolDir()
+{
+    const char *spooldir = G_conf.SpoolDir();
+    struct stat buf;
+    if ( stat(spooldir, &buf) == -1 )
+    {
+        // Spool dir doesn't exist? Create it..
+	if ( mkdir(spooldir, 0755) == -1 )		// mkdir failed?
+	{
+	    // Failed..
+	    string emsg = "mkdir('";
+		   emsg += spooldir;
+		   emsg += "')";
+	    perror(emsg.c_str());
+	    return -1;
+	}
+    }
+    // Make sure spooldir owned by configured news user
+    if ( chown(spooldir, G_conf.UID(), G_conf.GID()) == -1 )
+    {
+	// Failed..
+	string emsg = "chown('";
+	       emsg += spooldir;
+	       emsg += "',";
+	       emsg += G_conf.UID();
+	       emsg += ",";
+	       emsg += G_conf.GID();
+	       emsg += ")";
+	perror(emsg.c_str());
+	return -1;
+    }
+    return 0;
+}
+
+/****
 // CREATE DEAD LETTER FILE, CHOWN ACCORDINGLY
+//     Returns:
+//        0 on success
+//       -1 on error, prints reason on stderr
+//
 int CreateDeadLetter()
 {
+    // Make sure spool dir exists; create if not
+    if ( CreateSpoolDir() < 0 ) return -1;
     string filename = G_conf.SpoolDir();
     filename += "/.deadletters";
     fprintf(stderr, "(Creating %s)\n", filename.c_str());
@@ -126,13 +172,16 @@ int CreateDeadLetter()
     fchmod(fileno(fp), 0600);
     fchown(fileno(fp), G_conf.UID(), G_conf.GID());
     fclose(fp);
-
     return(0);
 }
+****/
 
 // WRITE A MESSAGE (header+body) TO DEAD LETTER FILE
 void DeadLetter(const char *errmsg, vector<string>&head, vector<string>&body)
 {
+    // Make sure spool dir exists; create if not
+    if ( CreateSpoolDir() < 0 ) return;
+
     string filename = G_conf.SpoolDir();
     filename += "/.deadletters";
     FILE *fp = fopen(filename.c_str(), "a");
@@ -427,11 +476,13 @@ int main(int argc, const char *argv[])
     }
     else if (newgroup)
     {
-	if (RunAs()) return(1);
+        // Make sure spool dir exists first
+	//    Do this as root, since /var/spool is root owned
+	//
+	if ( CreateSpoolDir() == -1 ) return 1;
 
-	// CREATE DEAD LETTER FILE, IF NONE
-	if ( CreateDeadLetter() < 0 )
-	    { fprintf(stderr, "news: CreateDeadLetter(): failed\n"); return(1); }
+	// Now become the news user..
+	if (RunAs()) return(1);
 
 	Group tmp;
 	return(tmp.NewGroup());

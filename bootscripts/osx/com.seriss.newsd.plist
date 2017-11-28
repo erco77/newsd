@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  SERISS NEWSD DAEMON LAUNCHDAEMON STARTER
+  plist Debugging: 'plutil -lint com.seriss.newsd.plist'
+  -->
+<dict>
+    <key>Label</key>              <string>com.seriss.newsd</string>
+    <key>Username</key>           <string>root</string>
+    <key>GroupName</key>          <string>wheel</string>
+    <key>Program</key>            <string>/usr/sbin/newsd</string>
+
+    <!-- Launchd prefers daemons run in foreground -->
+    <key>ProgramArguments</key>
+	<array>
+	     <string>newsd</string>
+	     <string>-f</string>
+	</array>
+
+    <key>Disabled</key>           <false/>
+    <key>ProcessType</key>        <string>Interactive</string>
+
+    <!--
+      In '-f' (foreground) mode daemon still writes to its own log,
+      so nothing of interest is printed on stdout/err
+      -->
+    <key>StandardInPath</key>     <string>/dev/null</string>
+    <key>StandardOutPath</key>    <string>/dev/null</string>
+    <key>StandardErrorPath</key>  <string>/dev/null</string>
+
+    <key>KeepAlive</key>
+    <dict>
+       <key>SuccessfulExit</key> <false/>
+    </dict>
+</dict>
+</plist>

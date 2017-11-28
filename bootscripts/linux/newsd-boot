@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# newsd boot script
+
+# chkconfig: 345 99 01
+# description: newsd NNTP server
+#
+### BEGIN INIT INFO
+# Provides:       newsd
+# Default-Start:  3 5
+# Default-Stop:   0 1 6
+# Description:    NNTP server
+### END INIT INFO
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"; export PATH
+ECHO=/bin/echo
+umask 022
+
+case "$1" in
+    'start')
+	# START THE DAEMON
+	$ECHO -n "newsd start: "; 
+	logger -t newsd "nntp daemon started by '$0 $1'"
+	/usr/sbin/newsd
+	;;
+
+    'stop')
+	# STOP THE DAEMON -- ATTEMPT CLEAN SHUTDOWN
+	$ECHO -n "newsd stop: " ; 
+	killall newsd
+	logger -t newsd "nntp daemon stopped by '$0 $1'"
+	$ECHO ok
+	;;
+
+    'restart')
+	# RESTART THE DAEMON
+	$0 stop && $0 start
+	;;
+
+    *)
+	$ECHO "usage: $0 {start|stop|restart}"
+	;;
+esac
+exit 0

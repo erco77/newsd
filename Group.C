@@ -468,8 +468,7 @@ int Group::FindArticleByMessageID(const char *message_id, unsigned long &number)
 		    for (ptr = line + 11; *ptr && isspace(*ptr & 255); ptr ++)
 		        { }
 
-		    // TODO: is the message ID case insensitive???
-                    if (!strncmp(ptr, message_id, idlen) && ptr[idlen] == '\n')
+		    if (!strncasecmp(ptr, message_id, idlen) && ptr[idlen] == '\n')
 		    {
 		        // Found it!
 		        number = temp;
@@ -627,9 +626,14 @@ int Group::Post(const char *overview[],
 		const char *remoteip_str,
 		bool force_post)
 {
-    const char *postgroup = GetHeaderValue(head, "Newsgroups:");
-    if ( ! postgroup )
-        { errmsg = "article has no 'Newsgroups' field"; return(-1); }
+    char postgroup[256];
+    {
+        const char *pgrp = GetHeaderValue(head, "Newsgroups:");
+	if ( ! pgrp )
+	    { errmsg = "article has no 'Newsgroups' field"; return(-1); }
+	strncpy(postgroup, pgrp, sizeof(postgroup)-1);
+	postgroup[sizeof(postgroup)-1] = 0;
+    }
 
     // LOCK FOR POSTING
     Name(postgroup);
@@ -836,7 +840,7 @@ int Group::Post(const char *overview[],
 }
 
 // INTERACTIVELY PROMPT FOR NEW GROUP
-//    Steps on group's internal variables.
+//    Writes out a new group config file.
 //    It's advised parent created a throw-away instance.
 //
 int Group::NewGroup()
@@ -852,11 +856,10 @@ int Group::NewGroup()
     if ( stat(Dirname(), &buf) < 0 )
     {
 	// NEWSGROUP DIR DOESNT EXIST, CREATE IT
-        string cmd = "mkdir -m 0755 -p ";
+        string cmd = "/bin/mkdir -m 0755 -p ";
 	cmd += Dirname();
 	G_conf.LogMessage(L_DEBUG, "Executing: %s", cmd.c_str());
-	if ( system(cmd.c_str()) )
-	    { return(1); }
+	if ( system(cmd.c_str()) ) { return(1); }
         G_conf.LogMessage(L_ERROR, "OK");
     }
 

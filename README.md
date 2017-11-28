@@ -33,8 +33,8 @@ BUILD INSTRUCTIONS
 
     Run GNU make to build the newsd binary:
 
-	make
-	
+        make
+        
     (NOTE: on some systems 'gnu make' is called 'gmake')
 
     Currently newsd reverted to old school separate Makefiles
@@ -42,18 +42,18 @@ BUILD INSTRUCTIONS
     autoconf too complicated, and haven't fully learned cmake yet)
 
     The correct file will be loaded automatically (if it exists), e.g. 
-    	
-	Makefile.Linux		-- linux presets
-	Makefile.FreeBSD	-- FreeBSD presets
+        
+        Makefile.Linux          -- linux presets
+        Makefile.FreeBSD        -- FreeBSD presets
 
     If your OS is not offered, run 'uname' to find the name
     of your operating system, and make copy one of the files
     most like your OS, e.g.
 
-	$ uname
-	OpenBSD
+        $ uname
+        OpenBSD
 
-    	$ cp Makefile.FreeBSD Makefile.OpenBSD
+        $ cp Makefile.FreeBSD Makefile.OpenBSD
 
     Then edit the new file, and make any necessary customizations.
 
@@ -62,54 +62,62 @@ BUILD INSTRUCTIONS
     file (XXX being your operating system's name), and change
     the settings, e.g.
 
-	$ vi Makefile.Linux
-	____________________________________________________
-	# Linux settings
-	CXX          = g++
-	BIN_DIR     := /usr/myhome/newsd/test/bin             << Make these
-	CONFIG_FILE := /usr/myhome/newsd/test/etc/newsd.conf  << changes.
-	SPOOL_DIR   := /usr/myhome/newsd/test/spool           << Be sure to use
-	LOG_DIR     := /usr/myhome/newsd/test/log             << absolute paths
-	MAN_DIR     := /usr/myhome/newsd/test/man             << for each setting.
-	SENDMAIL    := /usr/sbin/sendmail
-	____________________________________________________
+        $ vi Makefile.Linux
+        ____________________________________________________
+        # Linux settings
+        CXX          = g++
+        BIN_DIR     := /usr/myhome/newsd/test/bin             << Make these
+        CONFIG_FILE := /usr/myhome/newsd/test/etc/newsd.conf  << changes.
+        SPOOL_DIR   := /usr/myhome/newsd/test/spool           << Be sure to use
+        LOG_DIR     := /usr/myhome/newsd/test/log             << absolute paths
+        MAN_DIR     := /usr/myhome/newsd/test/man             << for each setting.
+        SENDMAIL    := /usr/sbin/sendmail
+        ____________________________________________________
 
     Once configured, these two commands will create the 'test'
     directory hierarchy, and builds/installs newsd into it:
 
-	$ mkdir -p /usr/myhome/newsd/test/{bin,etc,spool,log,man}
+        $ mkdir -p /usr/myhome/newsd/test/{bin,etc,spool,log,man}
 
-	$ make clean all install
+        $ make clean all install
 
     This will preconfigure the newsd.conf file and compiled-in
     defaults into newsd to use that directory layout:
 
-	    $HOME/newsd/test/bin/newsd		-- the newsd executable
-	    $HOME/newsd/test/etc/newsd.conf	-- a pre-configured newsd.conf
-	    $HOME/newsd/test/log/		-- newsd.log will be written here
-	    $HOME/newsd/test/spool/		-- newsgroups will be managed here
-	    $HOME/newsd/test/man/		-- manual pages
+            $HOME/newsd/test/bin/newsd          -- the newsd executable
+            $HOME/newsd/test/etc/newsd.conf     -- a pre-configured newsd.conf
+            $HOME/newsd/test/log/               -- newsd.log will be written here
+            $HOME/newsd/test/spool/             -- newsgroups will be managed here
+            $HOME/newsd/test/man/               -- manual pages
 
     To uninstall newsd from that directory hierarchy, use:
 
-    	make uninstall
+        make uninstall
 
 INSTALL INSTRUCTIONS
 
     Once the software builds (see above), you should be able to
     install the software with:
 
-    	make install
+        make install
 
     Then edit the installed newsd.conf file to make any needed
     changes for your setup.
 
-    Then try running the daemon in foreground mode with debugging
-    enabled, to see if it likes your settings. If it does, it will
-    continue running, printing diagnostic messages whenever NNTP
-    clients connect to it:
+    NOTE: By default, the newsd.conf file's 'User' option forces newsd
+          to run as the non-root user 'news'.
+          
+          If that user doesn't exist, either change the setting to
+          an existing user account to use, or create the news account
+          (Linux: 'adduser news', OSX: System Preferences).
 
-    	./newsd -d -f
+          Either way, this user will own the news spooler directory,
+          and its contents.
+
+    Now try running the daemon in foreground mode with debugging
+    enabled, to see if it likes your settings:
+    
+        ./newsd -d -f
 
     ..or to run it in the background as a daemon, then just:
 
@@ -117,13 +125,22 @@ INSTALL INSTRUCTIONS
 
     ..which will log output to ${LOG_DIR}/newsd.log
 
+    The daemon should continue running, logging
+    messages whenever NNTP clients connect to it.
+
+CONFIGURING NEWSD TO START ON BOOT
+
+    See the bootscripts/<your_os>/README.txt file
+    for how to configure your machine to run newsd
+    automatically on boot.
+
 CREATING NEWSGROUPS
 
-    To create a few empty newsgroups, you can use:
+    To create new newsgroups, you can use:
 
-    	./newsd -newgroup
+        sudo ./newsd -newgroup
 
-    ..and just answer the questions. 
+    ..and just answer the questions.
     
     Once a new group is created, any news clients should
     immediately be able to subscribe to the new group
@@ -133,11 +150,12 @@ CREATING NEWSGROUPS
     what 'newsd -newgroup' does. For example, to create
     a rush.test newsgroup:
 
-    	mkdir -p ${SPOOL_DIR}/rush/test
+        mkdir -m 755 -p ${SPOOL_DIR}/rush/test
+        chown -R news ${SPOOL_DIR}
 
-	( echo description Test group;
+        ( echo description Test group;
           echo creator     John Doe;
-	  echo postok      1;
+          echo postok      1;
           echo postlimit 0 ) > ${SPOOL_DIR}/rush/test/.config
 
 MAIL GATEWAY
@@ -150,20 +168,22 @@ MAIL GATEWAY
     ..which would add the text contents of email_message to
     the newsgroup 'rush.general'.
 
-    You can use 'newsd -mailgateway <GROUP_NAME>' as a mail
-    forward command for various email addresses, one email
-    address per group, so that e.g. mailing lists can be
-    forwarded into the newsd groups.
+    For each email address to be used as a gateway to a group,
+    configure 'newsd -mailgateway <GROUP_NAME>' as the mail
+    forward command.
+
 
 DOCUMENTATION
 
     There's documentation in both man page format and HTML:
 
-    	make man	-- makes manual pages (ending in *.8)
-	make html	-- makes html docs (ending in *.html)
+        make man        -- makes manual pages (ending in *.8)
+        make html       -- makes html docs (ending in *.html)
     
     'make install' should automatically create and install
-    the man pages.
+    the man pages, such that 'man newsd' and 'man newsd.conf'
+    work normally.
+
 
 FEATURES
 

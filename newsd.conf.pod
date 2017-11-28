@@ -267,8 +267,7 @@ when people first subscribe to the newsgroup.
 Specifies the email address of the owner of this group. Where
 mail should be sent regarding questions about the maintenance
 and administration of the group. This address is also used as
-the Errors-To: address for all email messages sent by
-\fRnewsd\fB.
+the Errors-To: address for all email messages sent by newsd.
 
 =item postok value
 
