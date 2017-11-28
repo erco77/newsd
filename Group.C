@@ -625,22 +625,10 @@ int Group::Post(const char *overview[],
 		vector<string> &head,
 		vector<string> &body,
 		const char *remoteip_str,
-		bool force)
+		bool force_post)
 {
-    // DETERMINE GROUP BEING POSTED TO
-    int found = 0;
-    char postgroup[255];
-    for ( unsigned int t=0; !found && t<head.size(); t++ )
-    {
-        if ( strncmp(head[t].c_str(), "Newsgroups: ", strlen("Newsgroups: ")) 
-	     == 0 )
-	{
-	    if ( sscanf(head[t].c_str(), "Newsgroups: %254s", postgroup) == 1 )
-		{ found = 1; }
-	}
-    }
-
-    if ( ! found )
+    const char *postgroup = GetHeaderValue(head, "Newsgroups:");
+    if ( ! postgroup )
         { errmsg = "article has no 'Newsgroups' field"; return(-1); }
 
     // LOCK FOR POSTING
@@ -651,7 +639,7 @@ int Group::Post(const char *overview[],
 	if ( Load(postgroup, 0) < 0 )
 	    { errmsg = "no such group"; Unlock(plock); return(-1); }
 
-	if ( postok == 0 && !force)
+	if ( postok == 0 && !force_post)
 	{
 	    errmsg = "posting disabled for group '";
 	    errmsg += postgroup;
@@ -767,16 +755,16 @@ int Group::Post(const char *overview[],
 
 	// STRIP UNWANTED INFO FROM HEADER
 	// HEADER NAMES ARE CASE INSENSITIVE: INTERNET DRAFT (Son of RFC1036)
-	for ( unsigned int t=0; t<head.size(); t++ )
 	{
-            if ( !strncasecmp(head[t].c_str(), "Lines: ", 7) ||
-	         !strncasecmp(head[t].c_str(), "Message-ID: ", 12) ||
-	         !strncasecmp(head[t].c_str(), "Date: ", 6) ||
-		 !strncasecmp(head[t].c_str(), "NNTP-Posting-Host: ", 19) )
-	    {
-	        head.erase( head.begin() + t);
-		--t;
-	    }
+	    uint index;
+
+	    // Remove Date: (if any)
+	    if ( ( index = GetHeaderIndex(head, "Date:") ) != -1 )
+	        { head.erase( head.begin() + index); }
+
+	    // Remove NNTP-Posting-Host: (if any)
+	    if ( ( index = GetHeaderIndex(head, "NNTP-Posting-Host:") ) != -1 )
+	        { head.erase( head.begin() + index); }
 	}
 
 	// HEADERS ADDED BY NEWS SERVER
@@ -795,17 +783,26 @@ int Group::Post(const char *overview[],
 	    (const char*)remoteip_str);
 	head.push_back(misc);
 
-	sprintf(misc, "Message-ID: <%lu-%s@%s>",
-	    (unsigned long)msgnum,
-	    (const char*)postgroup,
-	    (const char*)G_conf.ServerName());
-	head.push_back(misc);
+        // Only set Message-ID: if client didn't specify it
+	if ( !GetHeaderValue(head, "Message-ID:") )
+        {
+            sprintf(misc, "Message-ID: <%lu-%s@%s>",
+                (unsigned long)msgnum,
+                (const char*)postgroup,
+                (const char*)G_conf.ServerName());
+            head.push_back(misc);
+        }
 
-	sprintf(misc, "Lines: %u",
-	    (unsigned int)body.size());
-	head.push_back(misc);
+        // Only set Lines: if client didn't specify it
+	if ( !GetHeaderValue(head, "Lines:") )
+        {
+            sprintf(misc, "Lines: %u",
+                (unsigned int)body.size());
+            head.push_back(misc);
+        }
 
-	ReorderHeader(overview, head);
+	// DONT DO THIS -- MESSES UP MULTILINE FIELDS
+	// ReorderHeader(overview, head);
 
 	// WRITE HEADER
 	for ( unsigned int t=0; t<head.size(); t++ )
@@ -956,7 +953,8 @@ int Group::ParseArticle(string &msg, vector<string>&head, vector<string>&body)
     //     From: <who@bar.com>
     //     Date: Wdy, DD Mon YY HH:MM:SS TIMEZONE (or: Wdy Mon DD HH:MM:SS YYYY)
     //     Newsgroups: news.group[,news.group] -- ignore invalid groups
-    //     Subject: xx yy zz
+    //     Subject: a message with a long multiline
+    //      text subject line
     //     Message-ID: <unique@host.domain.com>
     //     Path: <recenthost>,<oldhost>,<olderhost>
     //
@@ -1073,4 +1071,52 @@ int Group::IsValidGroup()
     struct stat sbuf;
     if ( stat(cfgpath.c_str(), &sbuf) < 0 ) return(0);
     return(1);
+}
+
+// RETURN VALUE FOR SPECIFIED HEADER
+//    'fieldname' is a header field name, e.g. "Message-ID:".
+//    The trailing : must be included.
+//    Returns value as const char*, or NULL if field not found.
+//
+//    The search for 'fieldname' will be case insensitive (RFC 1036).
+//    Example: news clients can generate either "Message-ID" or "Message-Id".
+//
+const char* Group::GetHeaderValue(vector<string> &header, const char *fieldname) const
+{
+    int len = strlen(fieldname);
+    for ( uint t=0; t<header.size(); t++ )
+    {
+        if ( strncasecmp(header[t].c_str(), fieldname, len) == 0 )
+        {
+            const char *value = header[t].c_str() + len;           // "Message-ID: <foo>" -> " <foo>"
+            while ( *value && isspace(*value & 255) ) ++value;     // " <foo>" -> "<foo>"
+	    // printf("DEBUG: found '%s', value='%s'\n", fieldname, value);
+            return value;
+        }
+    }
+    // printf("DEBUG: NOT FOUND '%s'\n", fieldname);
+    return NULL;
+}
+
+// RETURN head[] INDEX FOR SPECIFIED HEADER
+//    'fieldname' is a header field name, e.g. "Message-ID:".
+//    The trailing : must be included.
+//    Returns index into head[] vector of matching field, or -1 if not found.
+//
+//    The search for 'fieldname' will be case insensitive (RFC 1036).
+//    Example: news clients can generate either "Message-ID" or "Message-Id".
+//
+uint Group::GetHeaderIndex(vector<string> &header, const char *fieldname) const
+{
+    int len = strlen(fieldname);
+    for ( uint t=0; t<header.size(); t++ )
+    {
+        if ( strncasecmp(header[t].c_str(), fieldname, len) == 0 )
+	{
+	    // printf("DEBUG: found '%s' at index %u\n", fieldname, t);
+	    return t;
+	}
+    }
+    // printf("DEBUG: NOT FOUND '%s'\n", fieldname);
+    return -1;
 }
