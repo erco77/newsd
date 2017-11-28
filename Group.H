@@ -134,7 +134,7 @@ public:
     void Total(unsigned long val)     { total = val; }
     void Name(const char*val) { name = val; }
     const char* GetHeaderValue(vector<string> &head, const char *fieldname) const;
-    uint GetHeaderIndex(vector<string> &head, const char *fieldname) const;
+    int GetHeaderIndex(vector<string> &head, const char *fieldname) const;
 
     int Load(const char *group, int dolock = 1);
     int WriteInfo(int fd);

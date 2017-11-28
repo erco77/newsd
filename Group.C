@@ -756,7 +756,7 @@ int Group::Post(const char *overview[],
 	// STRIP UNWANTED INFO FROM HEADER
 	// HEADER NAMES ARE CASE INSENSITIVE: INTERNET DRAFT (Son of RFC1036)
 	{
-	    uint index;
+	    int index;
 
 	    // Remove Date: (if any)
 	    if ( ( index = GetHeaderIndex(head, "Date:") ) != -1 )
@@ -1106,7 +1106,7 @@ const char* Group::GetHeaderValue(vector<string> &header, const char *fieldname)
 //    The search for 'fieldname' will be case insensitive (RFC 1036).
 //    Example: news clients can generate either "Message-ID" or "Message-Id".
 //
-uint Group::GetHeaderIndex(vector<string> &header, const char *fieldname) const
+int Group::GetHeaderIndex(vector<string> &header, const char *fieldname) const
 {
     int len = strlen(fieldname);
     for ( uint t=0; t<header.size(); t++ )
@@ -1114,7 +1114,7 @@ uint Group::GetHeaderIndex(vector<string> &header, const char *fieldname) const
         if ( strncasecmp(header[t].c_str(), fieldname, len) == 0 )
 	{
 	    // printf("DEBUG: found '%s' at index %u\n", fieldname, t);
-	    return t;
+	    return int(t);
 	}
     }
     // printf("DEBUG: NOT FOUND '%s'\n", fieldname);
