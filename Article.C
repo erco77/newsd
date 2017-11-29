@@ -160,7 +160,7 @@ int Article::Load(const char *groupname, ulong num)
 	    // CONTINUING TO UNFOLD MULTILINE HEADER? (RFC822 3.1.1)
 	    case '\t':
 	    case ' ':
-		val += (s+1);
+		val += s; // 1.50: leading white actually part of string
 		if ( val.length() >= FIELD_MAX )		// prevent ram DoS
 		    { val.erase(FIELD_MAX-1, val.length()); }	// truncate
 		continue;
@@ -297,7 +297,7 @@ static string SanitizeOverview(string& val)
     return(s);
 }
 
-// RETURN NNTP OVERVIEW (RFC2980 2.8 "XOVER")
+// RETURN NNTP "OVERVIEW" (RFC2980 2.8 "XOVER")
 string Article::Overview(const char *overview[])
 {
     string reply = ultos(Number());
