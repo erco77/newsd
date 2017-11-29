@@ -1,6 +1,11 @@
 newsd -- Change Log
 -------------------
 
+1.50 -- November 28, 2017
+        - Don't rewrite Message-ID if supplied by client
+        - Article search now starts with recent messages
+        - Article search now handles new modulus dirs
+
 1.45 -- ??
         - Fix for communication problem w/opera 9 news readers
         - Fix dot-stuffing issue

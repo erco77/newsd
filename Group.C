@@ -41,12 +41,12 @@ static string ultos(ulong num)
 //
 const char *Group::Dirname()
 {
-    string grpdir = name;			          // e.g. "rush.general"..
-    std::replace(grpdir.begin(), grpdir.end(), '.', '/'); // ..now "rush/general"
+    string grpdir = name;                                 // "rush.general"
+    std::replace(grpdir.begin(), grpdir.end(), '.', '/'); // "rush/general"
     dirname = G_conf.SpoolDir();
     dirname += "/";
     dirname += grpdir;
-    return dirname.c_str();	// safe, since this is an internal member
+    return dirname.c_str();  // return c_str() safe; dirname internal member
 }
 
 // SAVE OUT GROUP'S ".info" FILE
@@ -72,17 +72,10 @@ int Group::SaveInfo(int dolock)
 	    return(-1);
 	}
 
-	WriteString(fp, "start       ");
-	WriteString(fp, ultos(start));
-	WriteString(fp, "\n");
-
-	WriteString(fp, "end         ");
-	WriteString(fp, ultos(end));
-	WriteString(fp, "\n");
-
-	WriteString(fp, "total       ");
-	WriteString(fp, ultos(total));
-	WriteString(fp, "\n");
+	string crlf = "\n";
+	WriteString(fp, string("start       ") + ultos(start) + crlf);
+	WriteString(fp, string("end         ") + ultos(end)   + crlf);
+	WriteString(fp, string("total       ") + ultos(total) + crlf);
 
 	fflush(fp);
 	fsync(fileno(fp));
@@ -102,15 +95,15 @@ int Group::BuildInfo(int dolock)
     int ret = 0;
     if ( dolock ) { wlock = WriteLock(); }
 
-    start   = 0;
-    end     = 0;
-    total   = 0;
+    start = 0;
+    end   = 0;
+    total = 0;
 
     DIR *dir;
     struct dirent *dent;
     struct stat fileinfo;
     string filename;
-    ulong temp;
+    ulong artnum;
 
     if ((dir = opendir(dirname.c_str())) != NULL)
     {
@@ -154,9 +147,9 @@ int Group::BuildInfo(int dolock)
                         if (S_ISDIR(fileinfo.st_mode)) continue;
 
                         // Convert message number to an integer and compare...
-                        temp = strtoul(modulus_dent->d_name, NULL, 10);
-                        if (temp < start || total == 0) start = temp;
-                        if (temp > end || total == 0) end = temp;
+                        artnum = strtoul(modulus_dent->d_name, NULL, 10);
+                        if (artnum < start || total == 0) start = artnum;
+                        if (artnum > end || total == 0) end = artnum;
                         total ++;
                     }
                 }
@@ -169,9 +162,9 @@ int Group::BuildInfo(int dolock)
               if (S_ISDIR(fileinfo.st_mode)) continue;
 
               // Convert message number to an integer, cacl start/end/total
-              temp = strtoul(dent->d_name, NULL, 10);
-              if (temp < start || total == 0) start = temp;
-              if (temp > end || total == 0) end = temp;
+              artnum = strtoul(dent->d_name, NULL, 10);
+              if (artnum < start || total == 0) start = artnum;
+              if (artnum > end || total == 0) end = artnum;
               total ++;
             }
         }
@@ -222,23 +215,17 @@ int Group::LoadInfo(int dolock)
     int ilock = -1;
     if ( dolock ) { ilock = ReadLock(); }
     {
+	int len;
 	char buf[LINE_LEN];
-	// char foo[256];
-	while ( fgets(buf, LINE_LEN-1, fp) )
+	while ( fgets(buf, sizeof(buf), fp) )
 	{
 	    // REMOVE TRAILING \n
-	    if ( strlen(buf) > 1 )
-		buf[strlen(buf)-1] = 0;
-
+	    if ( (len = strlen(buf)) > 0 ) buf[len-1] = 0;
 	    // SKIP BLANK LINES AND COMMENTS
-	    if ( buf[0] == '#' || buf[0] == '\n' ) continue;
-
-	    if ( sscanf(buf, "start %lu", &start) == 1 ) 
-		{ continue; }
-	    if ( sscanf(buf, "end %lu", &end  ) == 1 ) 
-		{ continue; }
-	    if ( sscanf(buf, "total %lu", &total) == 1 )
-		{ continue; }
+	    if ( buf[0] == '#' || buf[0] == 0 ) continue;
+	    if ( sscanf(buf, "start %lu", &start) == 1 ) { continue; }
+	    if ( sscanf(buf, "end %lu",   &end  ) == 1 ) { continue; }
+	    if ( sscanf(buf, "total %lu", &total) == 1 ) { continue; }
 	}
 	fclose(fp);
     }
@@ -268,30 +255,31 @@ int Group::LoadConfig(int dolock)
     int ilock = -1;
     if ( dolock ) { ilock = ReadLock(); }
     {
+        int len;
 	char buf[LINE_LEN];
-	char foo[256];
+	char arg[256];
 	ccpost = "";
-	while ( fgets(buf, LINE_LEN-1, fp) )
+	while ( fgets(buf, sizeof(buf), fp) )
 	{
 	    // REMOVE TRAILING \n
-	    if ( strlen(buf) > 1 )
-		buf[strlen(buf)-1] = 0;
-
+	    if ( (len = strlen(buf)) > 0 ) buf[len-1] = 0;
 	    // SKIP BLANK LINES AND COMMENTS
-	    if ( buf[0] == '#' || buf[0] == '\n' ) continue;
+	    if ( buf[0] == '#' || buf[0] == 0 ) continue;
 
 	    if ( strncmp(buf, "description ", strlen("description ")) == 0 )
 	    {
-		desc = buf + strlen("description ");
+	        const char *p = buf + strlen("description ");
+		while ( *p && isspace(*p & 255) ) p++;  // skip leading white
+		desc = p;
 		continue;
 	    }
-	    if ( sscanf(buf, "creator %255s", foo) == 1 )
-		{ creator = foo; continue; }
+	    if ( sscanf(buf, "creator %255s", arg) == 1 )
+		{ creator = arg; continue; }
 	    if ( sscanf(buf, "postok %d", &postok) == 1 )
 		{ continue; }
 	    if ( sscanf(buf, "postlimit %d", &postlimit) == 1 )
 		{ continue; }
-	    if ( sscanf(buf, "ccpost %255s", foo) == 1 )
+	    if ( sscanf(buf, "ccpost %255s", arg) == 1 )
 	    { 
 		// Add trailing comma if none
 		if ( ccpost != "" && ccpost != "-" )
@@ -300,13 +288,13 @@ int Group::LoadConfig(int dolock)
 		    if ( *end != ',' )
 			{ ccpost += ","; }
 		}
-		ccpost += foo;
+		ccpost += arg;
 		continue;
 	    }
-	    if ( sscanf(buf, "replyto %255s", foo) == 1 )
-		{ replyto = foo; continue; }
-	    if ( sscanf(buf, "voidemail %255s", foo) == 1 )
-		{ voidemail = foo; continue; }
+	    if ( sscanf(buf, "replyto %255s", arg) == 1 )
+		{ replyto = arg; continue; }
+	    if ( sscanf(buf, "voidemail %255s", arg) == 1 )
+		{ voidemail = arg; continue; }
 	}
 	fclose(fp);
     }
@@ -341,33 +329,14 @@ int Group::SaveConfig()
 	    return(-1);
 	}
 
-	WriteString(fp, "description ");
-	WriteString(fp, desc);
-	WriteString(fp, "\n");
-
-	WriteString(fp, "creator     ");
-	WriteString(fp, creator);
-	WriteString(fp, "\n");
-
-	WriteString(fp, "postok      ");
-	WriteString(fp, ultos((ulong)postok));
-	WriteString(fp, "\n");
-
-	WriteString(fp, "postlimit   ");
-	WriteString(fp, ultos((ulong)postlimit));
-	WriteString(fp, "\n");
-
-	WriteString(fp, "ccpost      ");
-	WriteString(fp, ccpost);
-	WriteString(fp, "\n");
-
-	WriteString(fp, "replyto     ");
-	WriteString(fp, replyto);
-	WriteString(fp, "\n");
-
-	WriteString(fp, "voidemail   ");
-	WriteString(fp, voidemail);
-	WriteString(fp, "\n");
+	string crlf = "\n";
+	WriteString(fp, string("description ") + desc      + crlf);
+	WriteString(fp, string("creator     ") + creator   + crlf);
+	WriteString(fp, string("postok      ") + ultos((ulong)postok)    + crlf);
+	WriteString(fp, string("postlimit   ") + ultos((ulong)postlimit) + crlf);
+	WriteString(fp, string("ccpost      ") + ccpost    + crlf);
+	WriteString(fp, string("replyto     ") + replyto   + crlf);
+	WriteString(fp, string("voidemail   ") + voidemail + crlf);
 
 	fflush(fp);
 	fsync(fileno(fp));
@@ -458,23 +427,22 @@ int Group::GetMessageID(ulong artnum, string& msgid)
     string apath = Article::GetArticlePath(Name(), artnum);
 
     FILE *fp;
-    int ret = -1;			// assume failure unless successful
+    int ret = -1;  // assume failure if unchanged
     char line[1024];
     if ((fp = fopen(apath.c_str(), "r")) != NULL)
     {
 	// Parse article until Message-ID: field found, or until EOH
+        int len;
 	while (fgets(line, sizeof(line), fp) != NULL)
 	{
-	    if ( line[0] == '\n' ) { ret = -1; break; }      // eoh? not found..
-	    if ( strncasecmp(line, "Message-ID:", 11) == 0)  // Message-ID: <xyz>\n?
+	    // REMOVE TRAILING \n
+	    if ( (len = strlen(line)) > 0 ) line[len-1] = 0;
+	    if ( line[0] == 0 ) { ret = -1; break; }         // EOH? not found..
+	    if ( strncasecmp(line, "Message-ID:", 11) == 0)  // Message-ID: <xyz>?
 	    {
-		char *s = line + 11;	                     // " <xyz>\n"
-		while ( *s && isspace(*s & 255)) s++;        // Skip leading white, "<xyz>\n"
-		const char *id = s;			     // "<xyz>\n"
-		while ( *s )                                 // Remove trailing \n
-		    if ( *s == '\n' ) { *s = 0; break; }
-		    else s++;
-		msgid = id;			             // "<xyz>"
+		char *s = line + 11;	                     // " <xyz>"
+		while ( *s && isspace(*s & 255)) s++;        // "<xyz>"
+		msgid = s;			             // "<xyz>"
 		ret = 0;                                     // success
 		break;
 	    }
@@ -485,9 +453,9 @@ int Group::GetMessageID(ulong artnum, string& msgid)
 }
 
 // FIND ARTICLE NUMBER GIVEN A MESSAGEID
-//     This does a linear lookup; can take a while for group with many articles.
-//     Search starts at most recent article ( End() ) back to beginning of time,
-//     since people are usually interested in recent articles, not old ones.
+//     Does a linear lookup; can take a while for group with many articles.
+//     Starts at most recent article, End(), works back to beginning of time.
+//     Searches are usually for recent articles, not old ones.
 //
 // Returns:
 //     0 on success, 'number' contains the article#
@@ -627,7 +595,7 @@ const char *Group::DateRFC822()
     struct tm *tm = localtime(&lt);
     const char *wday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
     const char *mon[]  = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     // spec: Wdy, DD Mon YY HH:MM:SS TZ   (where TZ is a GMT offset "<+/->HHMM")
     //   eg: Sun, 27 Mar 83 20:39:37 -0800
@@ -743,8 +711,8 @@ int Group::Post(const char *overview[],
                         errmsg += path;
                         errmsg += ",0777): ";
                         errmsg += strerror(errno);
-                        G_conf.LogMessage(L_ERROR, "Group::Post(): ", errmsg.c_str());
-
+                        G_conf.LogMessage(L_ERROR, "Group::Post(): ",
+			                  errmsg.c_str());
                         Unlock(plock);
                         return(-1);
                     }
@@ -1050,9 +1018,11 @@ int Group::ParseArticle(string &msg, vector<string>&head, vector<string>&body)
     {
         uint t;
         for (t=0; t<head.size(); t++)
-            { G_conf.LogMessage(L_DEBUG, "ParseArticle: --- head[%03d]: '%s'\n", t, head[t].c_str()); }
+            { G_conf.LogMessage(L_DEBUG, "ParseArticle: --- head[%03d]: '%s'\n", 
+	                        t, head[t].c_str()); }
         for (t=0; t<body.size(); t++)
-            { G_conf.LogMessage(L_DEBUG, "ParseArticle: --- body[%03d]: '%s'\n", t, body[t].c_str()); }
+            { G_conf.LogMessage(L_DEBUG, "ParseArticle: --- body[%03d]: '%s'\n",
+	                        t, body[t].c_str()); }
     }
 
     return(0);
@@ -1123,9 +1093,9 @@ int Group::GetHeaderValue(vector<string> &header,
     for ( uint t=0; t<header.size(); t++ )
     {
         if ( strncasecmp(header[t].c_str(), fieldname, len) == 0 )
-        {
-            const char *vp = header[t].c_str() + len;     // "Message-ID: <foo>" -> " <foo>"
-            while ( *vp && isspace(*vp & 255) ) ++vp;     // " <foo>" -> "<foo>"
+        {                                                 // "Message-ID: <foo>"
+            const char *vp = header[t].c_str() + len;     // " <foo>"
+            while ( *vp && isspace(*vp & 255) ) ++vp;     // "<foo>"
 	    // printf("DEBUG: found '%s', value='%s'\n", fieldname, vp);
 	    value = vp;
             return 0;
