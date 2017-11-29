@@ -899,9 +899,9 @@ int Group::NewGroup()
     if ( postok )
     {
         fprintf(stderr,
-	    "\nMaximum #lines for postings, '0' if no max (default=0):\n");
+	    "\nMaximum #lines for postings, '0' if no max (default=1000):\n");
         if ( fgets(in, sizeof(in)-1, stdin) == NULL ) return(1);
-        if ( sscanf(in, "%d", &i) != 1 ) i = 0;
+        if ( sscanf(in, "%d", &i) != 1 ) i = 1000;
         postlimit = i;
     }
     else
