@@ -26,6 +26,9 @@ clean:
 	-rm -f newsd.html newsd.conf.html
 
 # Build Newsd
+Subs.o: Subs.C Subs.H everything.H VERSION.H
+	$(CXX) $(CXXFLAGS) -c Subs.C
+
 Article.o: Article.C Article.H everything.H VERSION.H
 	$(CXX) $(CXXFLAGS) -c Article.C
  
@@ -41,8 +44,8 @@ Group.o: Group.C Group.H everything.H VERSION.H
 newsd.o: newsd.C everything.H VERSION.H
 	$(CXX) $(CXXFLAGS) -c newsd.C
 
-newsd:  newsd.o Article.o Configuration.o Group.o Server.o
-	$(CXX) $(LDFLAGS) newsd.o Article.o Configuration.o Group.o Server.o -o newsd
+newsd:  newsd.o Subs.o Article.o Configuration.o Group.o Server.o
+	$(CXX) $(LDFLAGS) newsd.o Subs.o Article.o Configuration.o Group.o Server.o -o newsd
 
 # Build man pages
 man: newsd.pod newsd.conf.pod

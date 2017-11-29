@@ -25,6 +25,7 @@
 #define ARTICLE_H
 
 #include "everything.H"
+#include "Subs.H"
 
 class Article
 {
@@ -60,7 +61,7 @@ class Article
 	errmsg     = o.errmsg;
     }
 
-    int    _ParseHeader(string& key, string& val);
+    int _ParseHeader(string& key, string& val);
 
 public:
 

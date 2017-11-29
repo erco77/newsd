@@ -21,15 +21,8 @@
 // 80 //////////////////////////////////////////////////////////////////////////
 
 #include "Group.H"
+#include "Subs.H"
 #include <dirent.h>
-
-// RETURN STRING VERSION OF UNSIGNED LONG
-static string ultos(ulong num)
-{
-    ostringstream buffer;
-    buffer << num;
-    return(buffer.str());
-}
 
 // CONVERT CURRENT GROUP NAME TO A DIRECTORY NAME
 //    Returns the full path to the current group set by Name(),
@@ -73,9 +66,9 @@ int Group::SaveInfo(int dolock)
 	}
 
 	string crlf = "\n";
-	WriteString(fp, string("start       ") + ultos(start) + crlf);
-	WriteString(fp, string("end         ") + ultos(end)   + crlf);
-	WriteString(fp, string("total       ") + ultos(total) + crlf);
+	WriteString(fp, string("start       ") + ultos_SUBS(start) + crlf);
+	WriteString(fp, string("end         ") + ultos_SUBS(end)   + crlf);
+	WriteString(fp, string("total       ") + ultos_SUBS(total) + crlf);
 
 	fflush(fp);
 	fsync(fileno(fp));
@@ -215,14 +208,16 @@ int Group::LoadInfo(int dolock)
     int ilock = -1;
     if ( dolock ) { ilock = ReadLock(); }
     {
-	int len;
 	char buf[LINE_LEN];
 	while ( fgets(buf, sizeof(buf), fp) )
 	{
 	    // REMOVE TRAILING \n
-	    if ( (len = strlen(buf)) > 0 ) buf[len-1] = 0;
+	    TruncateCrlf_SUBS(buf);
+
 	    // SKIP BLANK LINES AND COMMENTS
 	    if ( buf[0] == '#' || buf[0] == 0 ) continue;
+
+	    // PARSE COMMANDS
 	    if ( sscanf(buf, "start %lu", &start) == 1 ) { continue; }
 	    if ( sscanf(buf, "end %lu",   &end  ) == 1 ) { continue; }
 	    if ( sscanf(buf, "total %lu", &total) == 1 ) { continue; }
@@ -255,17 +250,18 @@ int Group::LoadConfig(int dolock)
     int ilock = -1;
     if ( dolock ) { ilock = ReadLock(); }
     {
-        int len;
 	char buf[LINE_LEN];
 	char arg[256];
 	ccpost = "";
 	while ( fgets(buf, sizeof(buf), fp) )
 	{
 	    // REMOVE TRAILING \n
-	    if ( (len = strlen(buf)) > 0 ) buf[len-1] = 0;
+	    TruncateCrlf_SUBS(buf);
+
 	    // SKIP BLANK LINES AND COMMENTS
 	    if ( buf[0] == '#' || buf[0] == 0 ) continue;
 
+	    // PARSE COMMANDS
 	    if ( strncmp(buf, "description ", strlen("description ")) == 0 )
 	    {
 	        const char *p = buf + strlen("description ");
@@ -332,8 +328,8 @@ int Group::SaveConfig()
 	string crlf = "\n";
 	WriteString(fp, string("description ") + desc      + crlf);
 	WriteString(fp, string("creator     ") + creator   + crlf);
-	WriteString(fp, string("postok      ") + ultos((ulong)postok)    + crlf);
-	WriteString(fp, string("postlimit   ") + ultos((ulong)postlimit) + crlf);
+	WriteString(fp, string("postok      ") + ultos_SUBS((ulong)postok)    + crlf);
+	WriteString(fp, string("postlimit   ") + ultos_SUBS((ulong)postlimit) + crlf);
 	WriteString(fp, string("ccpost      ") + ccpost    + crlf);
 	WriteString(fp, string("replyto     ") + replyto   + crlf);
 	WriteString(fp, string("voidemail   ") + voidemail + crlf);
@@ -432,11 +428,10 @@ int Group::GetMessageID(ulong artnum, string& msgid)
     if ((fp = fopen(apath.c_str(), "r")) != NULL)
     {
 	// Parse article until Message-ID: field found, or until EOH
-        int len;
 	while (fgets(line, sizeof(line), fp) != NULL)
 	{
 	    // REMOVE TRAILING \n
-	    if ( (len = strlen(line)) > 0 ) line[len-1] = 0;
+	    TruncateCrlf_SUBS(line);
 	    if ( line[0] == 0 ) { ret = -1; break; }         // EOH? not found..
 	    if ( strncasecmp(line, "Message-ID:", 11) == 0)  // Message-ID: <xyz>?
 	    {
@@ -697,9 +692,9 @@ int Group::Post(const char *overview[],
             // Using modulus dirs?
             if ( G_conf.MsgModDirs() ) 
             {
-                path = Dirname();                    // "/path/fltk/general"
-                path += "/";                         // "/path/fltk/general/"
-                path += ultos((msgnum/1000)*1000);   // "/path/fltk/general/1000"
+                path = Dirname();                         // "/path/fltk/general"
+                path += "/";                              // "/path/fltk/general/"
+                path += ultos_SUBS((msgnum/1000)*1000);   // "/path/fltk/general/1000"
 
                 // See if modulus directory exists -- if not, create
                 struct stat sbuf;
@@ -726,14 +721,14 @@ int Group::Post(const char *overview[],
                     Unlock(plock);
                     return(-1);
                 }
-                path += "/";           // "/path/fltk/general/1000/"
-                path += ultos(msgnum); // "/path/fltk/general/1000/1999"
+                path += "/";                // "/path/fltk/general/1000/"
+                path += ultos_SUBS(msgnum); // "/path/fltk/general/1000/1999"
             }
             else
             {
-                path = Dirname();      // "/path/fltk/general"
-                path += "/";           // "/path/fltk/general/"
-                path += ultos(msgnum); // "/path/fltk/general/1999"
+                path = Dirname();           // "/path/fltk/general"
+                path += "/";                // "/path/fltk/general/"
+                path += ultos_SUBS(msgnum); // "/path/fltk/general/1999"
             }
 
 	    if ((fd = open(path.c_str(), O_CREAT|O_EXCL|O_WRONLY, 0644)) == -1)

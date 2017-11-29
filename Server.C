@@ -20,6 +20,7 @@
 //
 // 80 //////////////////////////////////////////////////////////////////////////
 
+#include "Subs.H"
 #include "Server.H"
 #include <dirent.h>
 
@@ -27,13 +28,6 @@
 // Convenience macros...
 #define ISIT(x)		if (!strcasecmp(cmd, x))
 #define ISHEAD(a)	(strncasecmp(head, (a), strlen(a))==0)
-
-// REPLACE ALL INSTANCES OF 'FROM' -> 'TO' IN STRING 'S'
-static void ReplaceString(char *s, char from, char to)
-{
-     for ( ; *s; s++ )
-	 if ( *s == from ) *s = to;
-}
 
 // SENDS CRLF TERMINATED MESSAGE TO REMOTE
 int Server::Send(const char *msg)
@@ -152,7 +146,7 @@ void AllGroups(vector<string>& groupnames, const char *subdir)
 		    // Use subdirectory for group name, map '/' -> '.'
 		    snprintf(groupname, sizeof(groupname), "%s.%s",
 		        subdir, dent->d_name);
-		    ReplaceString(groupname, '/', '.');
+		    ReplaceString_SUBS(groupname, '/', '.');
         	}
 		else
 		{

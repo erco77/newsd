@@ -22,21 +22,6 @@
 
 #include "Article.H"
 
-// RETURN STRING VERSION OF UNSIGNED LONG
-static string ultos(ulong num)
-{
-    ostringstream buffer;
-    buffer << num;
-    return(buffer.str());
-}
-
-// TRUNCATE STRING AT FIRST CR|LF
-static void TruncateCrlf(char *s)
-{
-    char *ss = strpbrk(s, "\r\n");
-    if ( ss ) *ss = '\0';
-}
-
 // SPLIT RFC822 3.1.2 HEADER INTO KEY/VALUE PAIRS
 //    If header malformed, key == "".
 //
@@ -74,10 +59,10 @@ string Article::GetArticlePath(const char* group, ulong artnum)
     if ( G_conf.MsgModDirs() )
         return(string(G_conf.SpoolDir()) + string("/") +        // "/spooldir/rush/general/1000/1234"
                pathgroup + string("/") +
-               ultos((artnum/1000)*1000) + "/" + ultos(artnum));
+               ultos_SUBS((artnum/1000)*1000) + "/" + ultos_SUBS(artnum));
     else
         return(string(G_conf.SpoolDir()) + string("/") +	// "/spooldir/rush/general/1234"
-               pathgroup + string("/") + ultos(artnum));
+               pathgroup + string("/") + ultos_SUBS(artnum));
 }
 
 // PARSE HEADER INTO CLASS
@@ -135,7 +120,7 @@ int Article::Load(const char *groupname, ulong num)
     FILE *fp = fopen(filename.c_str(), "r");
     if ( fp == NULL )
     {
-        errmsg = string("article ") + ultos(number) + 
+        errmsg = string("article ") + ultos_SUBS(number) + 
 	         string(" no longer exists: '") + filename +
 		 string("': ") + string(strerror(errno));
 	return(-1);
@@ -153,7 +138,8 @@ int Article::Load(const char *groupname, ulong num)
 
     while ( !done && fgets(s, sizeof(s)-1, fp) != NULL )
     {
-        TruncateCrlf(s);
+	// REMOVE TRAILING \n
+        TruncateCrlf_SUBS(s);
 
 	switch ( s[0] )
 	{
@@ -213,7 +199,7 @@ int Article::SendArticle(int fd, int head, int body)
     if ( fp == NULL )
     {
         errmsg = "article ";
-	errmsg.append(ultos(number));
+	errmsg.append(ultos_SUBS(number));
 	errmsg.append(" no longer exists: ");
 	errmsg.append(strerror(errno));
 	return(-1);
@@ -300,7 +286,7 @@ static string SanitizeOverview(string& val)
 // RETURN NNTP "OVERVIEW" (RFC2980 2.8 "XOVER")
 string Article::Overview(const char *overview[])
 {
-    string reply = ultos(Number());
+    string reply = ultos_SUBS(Number());
     for ( int r=0; overview[r]; r++ )
     {
 	// HEADER NAMES ARE CASE INSENSITIVE: INTERNET DRAFT (Son of RFC1036)
@@ -318,7 +304,7 @@ string Article::Overview(const char *overview[])
 	{
 	    reply += "\t"; 
 	    if ( lines > 0 )
-		{ reply += ultos(lines); } 
+		{ reply += ultos_SUBS(lines); } 
 	}
 	else if (!strcasecmp(overview[r], "Bytes:"))
 	{
