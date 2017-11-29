@@ -28,21 +28,21 @@
 
 class Article
 {
-    string        group;		// group name
-    string        filename;		// full path to the article
-    unsigned long number;		// article number
-    int           valid;		// article is valid (0=invalid)
+    string group;		// group name
+    string filename;		// full path to the article
+    ulong  number;		// article number
+    int    valid;		// article is valid (0=invalid)
 
     // commonly accessed header info
-    string from;			// From: field
-    string date;			// Date: field
-    string messageid;			// Message-ID: field
-    string subject;			// Subject: field
-    string references;			// References: field
-    string xref;			// Xref: field
-    int    lines;			// Lines: field
+    string from;		// From: field
+    string date;		// Date: field
+    string messageid;		// Message-ID: field
+    string subject;		// Subject: field
+    string references;		// References: field
+    string xref;		// Xref: field
+    int    lines;		// Lines: field
 
-    string errmsg;			// error message
+    string errmsg;		// error message
 
     void _Copy(const Article& o)
     {
@@ -60,7 +60,7 @@ class Article
 	errmsg     = o.errmsg;
     }
 
-    string _ArticlePath(unsigned long num);
+    string _ArticlePath(ulong num);
     int    _ParseHeader(string& key, string& val);
 
 public:
@@ -99,14 +99,14 @@ public:
     const char    *Xref()       { return(xref.c_str()); }
     const char    *References() { return(references.c_str()); }
     int            Lines()      { return(lines); }
-    unsigned long  Number()     { return(number); }
+    ulong          Number()     { return(number); }
     const char    *Errmsg()     { return(errmsg.c_str()); }
 
     // load info for group/article
-    int Load(const char *group, unsigned long num);
+    int Load(const char *group, ulong num);
 
     // load info for article
-    int Load(unsigned long num);
+    int Load(ulong num);
 
     // send article to remote via fd
     int SendArticle(int fd, int head=1, int body=1);

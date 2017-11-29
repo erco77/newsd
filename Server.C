@@ -79,7 +79,7 @@ int Server::NewGroup(const char *the_group)
     if ( ValidGroup(the_group) < 0 ) 
 	{ return(-1); }
 
-    if ( group.Load(the_group) < 0 )
+    if ( group.LoadInfo(the_group) < 0 )
 	{ errmsg = group.Errmsg(); return(-1); }
 
     return(0);
@@ -399,7 +399,7 @@ int Server::CommandLoop(const char *overview[])
 		for ( unsigned t=0; t<groupnames.size(); t++ )
 		{
 		    Group tgroup;
-		    if ( tgroup.Load(groupnames[t].c_str()) < 0 )
+		    if ( tgroup.LoadInfo(groupnames[t].c_str()) < 0 )
 		        { continue; }
 		    snprintf(reply, sizeof(reply), "%s %d %d %c",
 			(const char*)tgroup.Name(),
@@ -421,7 +421,7 @@ int Server::CommandLoop(const char *overview[])
 		for ( unsigned t=0; t<groupnames.size(); t++ )
 		{
 		    Group tgroup;
-		    if ( tgroup.Load(groupnames[t].c_str()) < 0 )
+		    if ( tgroup.LoadInfo(groupnames[t].c_str()) < 0 )
 		        { continue; }
 		    snprintf(reply, sizeof(reply), "%s %ld %s", 
 		        (const char*)tgroup.Name(),
@@ -455,7 +455,7 @@ int Server::CommandLoop(const char *overview[])
 		for ( unsigned t=0; t<groupnames.size(); t++ )
 		{
 		    Group tgroup;
-		    if ( tgroup.Load(groupnames[t].c_str()) < 0 )
+		    if ( tgroup.LoadInfo(groupnames[t].c_str()) < 0 )
 		        { continue; }
 		    snprintf(reply, sizeof(reply), "%s %s",
 		        (const char*)tgroup.Name(),
@@ -495,7 +495,7 @@ int Server::CommandLoop(const char *overview[])
 
 	    if ( arg1[0] )
 	    {
-		if ( group.Load(arg1) < 0 )
+		if ( group.LoadInfo(arg1) < 0 )
 		{
 		    snprintf(reply, sizeof(reply), "411 No such newsgroup: %s", 
 		        (const char*)group.Errmsg());
@@ -515,7 +515,7 @@ int Server::CommandLoop(const char *overview[])
 	    article.Load(group.Start());
 
 	    Send("211 list of article numbers follow");
-	    for ( unsigned long t = group.Start(); t <= group.End(); t++ )
+	    for ( ulong t = group.Start(); t <= group.End(); t++ )
 		{ snprintf(reply, sizeof(reply), "%lu", t); Send(reply); }
 	    Send(".");
 	    continue;
@@ -552,7 +552,7 @@ int Server::CommandLoop(const char *overview[])
 		continue;
 	    }
 
-	    unsigned long sarticle = group.Start(),
+	    ulong sarticle = group.Start(),
 		  earticle = group.End();
 
 	    // HANDLE OPTIONAL RANGE
@@ -575,7 +575,7 @@ int Server::CommandLoop(const char *overview[])
 
 	    Send("224 overview follows");
 
-	    for ( unsigned long t=sarticle; t<=earticle; t++ )
+	    for ( ulong t=sarticle; t<=earticle; t++ )
 	    {
 	        // LOAD EACH ARTICLE
 	        Article a;
@@ -604,7 +604,7 @@ int Server::CommandLoop(const char *overview[])
 
 	    Group restore = group;
 
-	    if ( group.Load(arg1) < 0 )
+	    if ( group.LoadInfo(arg1) < 0 )
 	    {
 		snprintf(reply, sizeof(reply), "411 No such newsgroup: %s", 
 		    (const char*)group.Errmsg());
@@ -623,9 +623,9 @@ int Server::CommandLoop(const char *overview[])
 	    //           s = name of the group.)
 	    //
 	    snprintf(reply, sizeof(reply), "211 %lu %lu %lu %s group selected", 
-		(unsigned long)group.Total(), 
-		(unsigned long)group.Start(), 
-		(unsigned long)group.End(), 
+		(ulong)group.Total(), 
+		(ulong)group.Start(), 
+		(ulong)group.End(), 
 		(const char*)group.Name());
 	    Send(reply);
 	    continue;
@@ -693,7 +693,7 @@ int Server::CommandLoop(const char *overview[])
 	    for ( unsigned t=0; t<groupnames.size(); t++ )
 	    {
 		Group tgroup;
-		if ( tgroup.Load(groupnames[t].c_str()) < 0 )
+		if ( tgroup.LoadInfo(groupnames[t].c_str()) < 0 )
 		    { continue; }
 		Send(tgroup.Name());
 	    }
@@ -727,7 +727,7 @@ int Server::CommandLoop(const char *overview[])
 	    if ( ! article.IsValid() )
 		{ Send("420 no article has been selected"); continue; }
 
-	    unsigned long next = article.Number() + 1;
+	    ulong next = article.Number() + 1;
 
 	    if ( next < group.Start() || next > group.End() )
 		{ Send("421 no next article in this group"); continue; }
@@ -736,7 +736,7 @@ int Server::CommandLoop(const char *overview[])
 	    {
 	        snprintf(reply, sizeof(reply),
 		    "421 error retrieving article %lu: %s",
-		    (unsigned long)next,
+		    (ulong)next,
 		    (const char*)article.Errmsg());
 		Send(reply);
 		article = restore;
@@ -745,7 +745,7 @@ int Server::CommandLoop(const char *overview[])
 
 	    snprintf(reply, sizeof(reply),
 		"223 %lu %s article retrieved - request text separately",
-		(unsigned long)next,
+		(ulong)next,
 		(const char*)article.MessageID());
 	    Send(reply);
 	    continue;
@@ -760,7 +760,7 @@ int Server::CommandLoop(const char *overview[])
 
 	    Article restore = article;
 
-	    unsigned long the_article;
+	    ulong the_article;
 	    char restoreflag = 0;
 
 	    if ( ! group.IsValid() )
@@ -794,8 +794,8 @@ int Server::CommandLoop(const char *overview[])
 	    {
 		snprintf(reply, sizeof(reply),
 		    "423 no such article in group (range %lu-%lu)",
-		    (unsigned long)group.Start(),
-		    (unsigned long)group.End());
+		    (ulong)group.Start(),
+		    (ulong)group.End());
 		Send(reply);
 		continue;
 	    }
@@ -813,7 +813,7 @@ int Server::CommandLoop(const char *overview[])
 	    {
 		snprintf(reply, sizeof(reply),
 		    "220 %lu %s article retrieved - head and body follow", 
-		    (unsigned long)the_article, 
+		    (ulong)the_article, 
 		    (const char*)article.MessageID());
 		Send(reply);
 	        article.SendArticle(msgsock); 
@@ -823,7 +823,7 @@ int Server::CommandLoop(const char *overview[])
 	    {
 		snprintf(reply, sizeof(reply),
 		    "221 %lu %s article retrieved - head follows", 
-		    (unsigned long)the_article, 
+		    (ulong)the_article, 
 		    (const char*)article.MessageID());
 		Send(reply);
 	        article.SendHead(msgsock);
@@ -833,7 +833,7 @@ int Server::CommandLoop(const char *overview[])
 	    {
 		snprintf(reply, sizeof(reply),
 		    "222 %lu %s article retrieved - body follows", 
-		    (unsigned long)the_article, 
+		    (ulong)the_article, 
 		    (const char*)article.MessageID());
 		Send(reply);
 	        article.SendBody(msgsock);
@@ -844,7 +844,7 @@ int Server::CommandLoop(const char *overview[])
 	    {
 		snprintf(reply, sizeof(reply),
 		    "223 %lu %s article retrieved - request text separately", 
-		    (unsigned long)the_article, 
+		    (ulong)the_article, 
 		    (const char*)article.MessageID());
 		Send(reply);
 	    }

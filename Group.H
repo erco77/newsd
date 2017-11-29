@@ -18,6 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //
+// 80 //////////////////////////////////////////////////////////////////////////
 
 #ifndef GROUP_H
 #define GROUP_H
@@ -27,23 +28,23 @@
 class Group
 {
     // ".info" FILE DATA
-    unsigned long start, end, total;		// start/end/total articles
+    ulong start, end, total;	// start/end/total articles
 
     // ".config" FILE DATA
-    string desc;			// group description
-    string creator;			// group creator email
-    string name;			// group name
-    string ccpost;			// email address to cc all postings to
-    string replyto;			// optional replyto address
-    string voidemail;			// bit bucket
-    int postok,				// allow posting to this group
-	postlimit;			// posting line limit
+    string desc;	// group description
+    string creator;	// group creator email
+    string name;	// group name
+    string ccpost;	// email address to cc all postings to
+    string replyto;	// optional replyto address
+    string voidemail;	// bit bucket email address
+    int postok,		// allow posting to this group
+	postlimit;	// posting line limit
 
-    string dirname;			// directory name
-    time_t ctime;			// creation time
-    int valid;				// is group valid? 0=invalid
-    string errmsg;			// error message
-    char datebuf[80];			// RFC822 date buffer
+    string dirname;	// full path to group, "/var/spool/newsd/foo/bar"
+    time_t ctime;	// creation time
+    int valid;		// is group valid? 0=invalid
+    string errmsg;	// error message
+    char datebuf[80];	// RFC822 date buffer
 
     // GENERAL LOCKING
     //    Write lock whenever posting or saving info file.
@@ -54,6 +55,7 @@ class Group
     void Unlock(int fd);
 
     int WriteString(FILE *fp, const char *buf);
+    int WriteString(FILE *fp, const string& buf);
     int BuildInfo(int dolock = 1);
     int LoadInfo(int dolock = 1);
     int SaveInfo(int dolock = 1);
@@ -112,9 +114,9 @@ public:
     }
 
     // ACCESSORS
-    unsigned long Start()       { return(start); }
-    unsigned long End()         { return(end); }
-    unsigned long Total()       { return(total); }
+    ulong         Start()       { return(start); }
+    ulong         End()         { return(end); }
+    ulong         Total()       { return(total); }
     int           PostOK()      { return(postok); }
     int           PostLimit()   { return(postlimit); }
     long          Ctime()       { return(ctime); }
@@ -129,23 +131,31 @@ public:
     const char   *VoidEmail()   { return(voidemail.c_str()); }
     const char   *Errmsg()      { return(errmsg.c_str()); }
 
-    void Start(unsigned long val)     { start = val; }
-    void End(unsigned long val)       { end = val; }
-    void Total(unsigned long val)     { total = val; }
-    void Name(const char*val) { name = val; }
-    const char* GetHeaderValue(vector<string> &head, const char *fieldname) const;
+    void Start(ulong val)        { start = val; }
+    void End(ulong val)          { end = val; }
+    void Total(ulong val)        { total = val; }
+    void Name(const char *val)   { name = val; }
+    void Name(const string& val) { name = val; }
+
+    // Header parsing
+    int GetHeaderValue(vector<string> &head, const char *fieldname, string& value) const;
     int GetHeaderIndex(vector<string> &head, const char *fieldname) const;
 
-    int Load(const char *group, int dolock = 1);
+    int LoadInfo(const char *group, int dolock = 1);
+    int LoadInfo(string& group, int dolock = 1) { return LoadInfo(group.c_str(), dolock); }
     int WriteInfo(int fd);
-    int FindArticleByMessageID(const char *find_messageid,
-                               unsigned long &articlenum);
     int Post(const char*overview[], vector<string> &head, 
     	     vector<string> &body, const char *remoteip_str, bool force=false);
-    const char *Dirname();
+    const char* Dirname();
 
     int NewGroup();
+
+    // Articles
+    string GetPathForArticle(ulong artnum);
+    int GetMessageID(ulong artnum, string& msgid);
     int ParseArticle(string &msg, vector<string>&head, vector<string>&body);
+    int FindArticleByMessageID(const char *find_messageid, ulong &articlenum);
+
     void UpdatePath(vector<string>&head);
     int IsValidGroup();
 };

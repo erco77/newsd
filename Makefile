@@ -56,6 +56,7 @@ html: newsd.pod newsd.conf.pod
 
 # Install
 install: newsd man html
+	-killall newsd 2> /dev/null
 	cp newsd  $(BIN_DIR)/newsd
 	chmod 755 $(BIN_DIR)/newsd
 	cat newsd.conf | sed 's%^ErrorLog.*%ErrorLog $(LOG_DIR)/newsd.log%'	| \

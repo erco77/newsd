@@ -23,7 +23,7 @@
 #include "Article.H"
 
 // RETURN STRING VERSION OF UNSIGNED LONG
-static string ultos(unsigned long num)
+static string ultos(ulong num)
 {
     ostringstream buffer;
     buffer << num;
@@ -62,7 +62,7 @@ static void SplitKeyValue(char *s, string& key, string& val)
 // CREATE ABSOLUTE PATHNAME TO THE GROUP
 //     e.g. "/var/spool/news/rush/general/1234"
 //
-string Article::_ArticlePath(unsigned long num)
+string Article::_ArticlePath(ulong num)
 {
     // rush.general -> rush/general
     string pathgroup = group; 
@@ -106,7 +106,7 @@ int Article::_ParseHeader(string& key, string& val)
 }
 
 // LOAD ARTICLE FROM SPECIFIED GROUP
-int Article::Load(const char *groupname, unsigned long num)
+int Article::Load(const char *groupname, ulong num)
 {
     // ZERO OUT FIELDS
     //group       = "";		// don't clear; parent may call us w/this->group
@@ -189,7 +189,7 @@ int Article::Load(const char *groupname, unsigned long num)
 // LOAD ARTICLE NUMBER FROM CURRENT GROUP
 //     Returns -1 on error, errmsg has reason.
 //
-int Article::Load(unsigned long num)
+int Article::Load(ulong num)
 {
     if ( group == "" )
 	{ errmsg = "No group selected"; return(-1); }

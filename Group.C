@@ -23,28 +23,30 @@
 #include "Group.H"
 #include <dirent.h>
 
-
-// RETURN ASCII VERSION OF AN UNSIGNED LONG
-static const char *ultoa(unsigned long num)
+// RETURN STRING VERSION OF UNSIGNED LONG
+static string ultos(ulong num)
 {
-    static char s[80];
-    sprintf(s, "%lu", num);
-    return(s);
+    ostringstream buffer;
+    buffer << num;
+    return(buffer.str());
 }
 
+// CONVERT CURRENT GROUP NAME TO A DIRECTORY NAME
+//    Returns the full path to the current group set by Name(),
+//    updating the internal member 'dirname' in the process.
+//
+//    Example: if name="rush.general", then on return 'dirname'
+//    will be "/var/spool/newsd/rush/general", and this value is
+//    returned as a c_str().
+//
 const char *Group::Dirname()
 {
-    // CONVERT GROUP NAME TO A DIRECTORY NAME
-    //    eg. rush.general -> /var/spool/news/rush/general
-    //
+    string grpdir = name;			          // e.g. "rush.general"..
+    std::replace(grpdir.begin(), grpdir.end(), '.', '/'); // ..now "rush/general"
     dirname = G_conf.SpoolDir();
     dirname += "/";
-    dirname += name;
-    for ( int t=0; dirname[t]; t++ )
-        if ( dirname[t] == '.' )
-	    dirname[t] = '/';
-
-    return(dirname.c_str());
+    dirname += grpdir;
+    return dirname.c_str();	// safe, since this is an internal member
 }
 
 // SAVE OUT GROUP'S ".info" FILE
@@ -71,15 +73,15 @@ int Group::SaveInfo(int dolock)
 	}
 
 	WriteString(fp, "start       ");
-	WriteString(fp, ultoa(start));
+	WriteString(fp, ultos(start));
 	WriteString(fp, "\n");
 
 	WriteString(fp, "end         ");
-	WriteString(fp, ultoa(end));
+	WriteString(fp, ultos(end));
 	WriteString(fp, "\n");
 
 	WriteString(fp, "total       ");
-	WriteString(fp, ultoa(total));
+	WriteString(fp, ultos(total));
 	WriteString(fp, "\n");
 
 	fflush(fp);
@@ -108,7 +110,7 @@ int Group::BuildInfo(int dolock)
     struct dirent *dent;
     struct stat fileinfo;
     string filename;
-    unsigned long temp;
+    ulong temp;
 
     if ((dir = opendir(dirname.c_str())) != NULL)
     {
@@ -340,31 +342,31 @@ int Group::SaveConfig()
 	}
 
 	WriteString(fp, "description ");
-	WriteString(fp, desc.c_str());           
+	WriteString(fp, desc);
 	WriteString(fp, "\n");
 
 	WriteString(fp, "creator     ");
-	WriteString(fp, creator.c_str());
+	WriteString(fp, creator);
 	WriteString(fp, "\n");
 
 	WriteString(fp, "postok      ");
-	WriteString(fp, ultoa((unsigned long)postok));
+	WriteString(fp, ultos((ulong)postok));
 	WriteString(fp, "\n");
 
 	WriteString(fp, "postlimit   ");
-	WriteString(fp, ultoa((unsigned long)postlimit));
+	WriteString(fp, ultos((ulong)postlimit));
 	WriteString(fp, "\n");
 
 	WriteString(fp, "ccpost      ");
-	WriteString(fp, ccpost.c_str());
+	WriteString(fp, ccpost);
 	WriteString(fp, "\n");
 
 	WriteString(fp, "replyto     ");
-	WriteString(fp, replyto.c_str());
+	WriteString(fp, replyto);
 	WriteString(fp, "\n");
 
 	WriteString(fp, "voidemail   ");
-	WriteString(fp, voidemail.c_str());
+	WriteString(fp, voidemail);
 	WriteString(fp, "\n");
 
 	fflush(fp);
@@ -379,7 +381,7 @@ int Group::SaveConfig()
 //    Set dolock=0 if lock has already been made
 //    to prevent deadlocks.
 //
-int Group::Load(const char *group_name, int dolock)
+int Group::LoadInfo(const char *group_name, int dolock)
 {
     valid = 0;			// assume failed until success
 
@@ -393,7 +395,7 @@ int Group::Load(const char *group_name, int dolock)
 	errmsg += group_name;
 	errmsg += "': ";
 	errmsg += strerror(errno);
-	G_conf.LogMessage(L_ERROR, "Group::Load(): %s", errmsg.c_str());
+	G_conf.LogMessage(L_ERROR, "Group::LoadInfo(): %s", errmsg.c_str());
 	return(-1);
     }
 
@@ -430,64 +432,120 @@ int Group::WriteString(FILE *fp, const char *buf)
     return(0);
 }
 
-// FIND ARTICLE NUMBER GIVEN A MESSAGEID
-int Group::FindArticleByMessageID(const char *message_id, unsigned long &number)
+// WRITE NULL TERMINATED STRING TO FD
+int Group::WriteString(FILE *fp, const string& buf)
 {
-    char	*ptr;
-
-    // See if we have a Message-Id of the form number-groupname@servername...
-    ptr    = NULL;
-    number = strtoul(message_id + 1, &ptr, 10);
-    if (!ptr || *ptr != '-')
+    if ( fwrite(buf.c_str(), 1, buf.size(), fp) != buf.size())
     {
-	// No, do a slow lookup...
-	int idlen = strlen(message_id);
-	unsigned long temp;
-	char line[1024];
-	FILE *fp;
+        errmsg = "write error";
+	G_conf.LogMessage(L_ERROR, "Group::WriteString(): %s", errmsg.c_str());
+	return(-1);
+    }
+    return(0);
+}
 
-	// Load dirname with the correct group directory...
-	Dirname();
+// RETURN ABSOLUTE PATHNAME TO ARTICLE#
+//     Returns path to artcile# in 'artnum'.
+//    
+string Group::GetPathForArticle(ulong artnum)
+{
+    string apath = Dirname();		// path to the article
+    apath += "/";
 
-	for (number = 0, temp = Start(); temp <= End(); temp ++)
+    // Using modulus dirs?
+    if ( G_conf.MsgModDirs() )
+    {
+        // Include extra directory name..
+        apath += ultos((artnum/1000)*1000);
+	apath += "/";
+	apath += ultos(artnum);		// "/path/fltk/general/1000/1234"
+    }
+    else
+    {
+       apath += ultos(artnum);		// "/path/fltk/general/1234"
+    }
+
+    //DEBUG G_conf.LogMessage(L_DEBUG, "Group::PathToArticle(%ld): %s", artnum, apath.c_str());
+
+    return apath;
+}
+
+// RETURN THE "Message-ID" FOR ARTICLE IN A GROUP
+//     'group' is the group to search (e.g. "fltk.general"),
+//     'artnum' is the article# to get Message-ID for.
+//     The returned value includes the angle brackets.
+//
+// Returns:
+//     0 on success, 'msgid' has the Message-ID value, e.g. "<some_string>"
+//    -1 if not found
+//
+int Group::GetMessageID(ulong artnum, string& msgid)
+{
+    string apath = GetPathForArticle(artnum);
+
+    FILE *fp;
+    int ret = -1;			// assume failure unless successful
+    char line[1024];
+    if ((fp = fopen(apath.c_str(), "r")) != NULL)
+    {
+	// Parse article until Message-ID: field found, or until EOH
+	while (fgets(line, sizeof(line), fp) != NULL)
 	{
-            snprintf(line, sizeof(line), "%s/%lu", dirname.c_str(), temp);
-
-	    if ((fp = fopen(line, "r")) != NULL)
+	    if ( line[0] == '\n' ) { ret = -1; break; }      // eoh? not found..
+	    if ( strncasecmp(line, "Message-ID:", 11) == 0)  // Message-ID: <xyz>\n?
 	    {
-		while (fgets(line, sizeof(line), fp) != NULL)
-	            // Stop at the first blank line or a Message-ID: header
-	            if (line[0] == '\n' || !strncasecmp(line, "Message-Id:", 11))
-			break;
-
-        	fclose(fp);
-
-        	if (line[0] != '\n')
-		{
-	            // Compare this message ID against the search ID...
-		    for (ptr = line + 11; *ptr && isspace(*ptr & 255); ptr ++)
-		        { }
-
-		    if (!strncasecmp(ptr, message_id, idlen) && ptr[idlen] == '\n')
-		    {
-		        // Found it!
-		        number = temp;
-			break;
-		    }
-		}
+		char *s = line + 11;	                     // " <xyz>\n"
+		while ( *s && isspace(*s & 255)) s++;        // Skip leading white, "<xyz>\n"
+		const char *id = s;			     // "<xyz>\n"
+		while ( *s )                                 // Remove trailing \n
+		    if ( *s == '\n' ) { *s = 0; break; }
+		    else s++;
+		msgid = id;			             // "<xyz>"
+		ret = 0;                                     // success
+		break;
 	    }
 	}
+	fclose(fp);
+    }
+    return ret;
+}
 
-	// Return an error if necessary...
-	if (!number)
+// FIND ARTICLE NUMBER GIVEN A MESSAGEID
+//     This does a linear lookup; can take a while for group with many articles.
+//     Search starts at most recent article ( End() ) back to beginning of time,
+//     since people are usually interested in recent articles, not old ones.
+//
+// Returns:
+//     0 on success, 'number' contains the article#
+//    -1 on failure, errmsg has reason to return to user (cc'ed to log)
+//
+int Group::FindArticleByMessageID(const char *ccp_msgid, ulong &number)
+{
+    string msgid = ccp_msgid;
+    // Do a slow lookup...
+    // Walk all articles until we find matching Message-ID
+    string art_msgid;
+    ulong count = 0;
+    for (ulong artnum = End(); artnum >= Start(); artnum-- )
+    {
+        ++count;
+	if ( GetMessageID(artnum, art_msgid) == 0 )     // found msgid value?
 	{
-	    errmsg = string("Message-ID not found: ") + message_id;
-	    G_conf.LogMessage(L_ERROR, "Message-ID not found: %s", message_id);
-	    return(-1);
+	    if ( art_msgid == msgid )	                // matches search?
+	    {
+		G_conf.LogMessage(L_INFO, "Message-ID '%s' found after searching "
+		                          "%ld articles", msgid.c_str(), count);
+	        number = artnum;	// save article#, done
+		return 0;
+	    }
 	}
     }
 
-    return (0);
+    // Return an error if not found..
+    errmsg = string("Message-ID not found: ") + msgid;
+    G_conf.LogMessage(L_ERROR, "Message-ID '%s' not found after searching "
+                               "%ld articles", msgid.c_str(), count);
+    return(-1);
 }
 
 // READ LOCK
@@ -626,21 +684,16 @@ int Group::Post(const char *overview[],
 		const char *remoteip_str,
 		bool force_post)
 {
-    char postgroup[256];
-    {
-        const char *pgrp = GetHeaderValue(head, "Newsgroups:");
-	if ( ! pgrp )
-	    { errmsg = "article has no 'Newsgroups' field"; return(-1); }
-	strncpy(postgroup, pgrp, sizeof(postgroup)-1);
-	postgroup[sizeof(postgroup)-1] = 0;
-    }
+    string postgroup;
+    if ( GetHeaderValue(head, "Newsgroups:", postgroup) == -1 )
+	{ errmsg = "article has no 'Newsgroups' field"; return(-1); }
 
     // LOCK FOR POSTING
     Name(postgroup);
     int plock = WriteLock();
     {
 	// LOAD INFO FOR THIS GROUP
-	if ( Load(postgroup, 0) < 0 )
+	if ( LoadInfo(postgroup, 0) < 0 )
 	    { errmsg = "no such group"; Unlock(plock); return(-1); }
 
 	if ( postok == 0 && !force_post)
@@ -692,7 +745,7 @@ int Group::Post(const char *overview[],
 	}
 
 	// OPEN NEW ARTICLE
-	unsigned long msgnum = 0;
+	ulong msgnum = 0;
 	int fd;
 	for ( msgnum=End() + 1; 1; msgnum++ )
 	{
@@ -702,9 +755,9 @@ int Group::Post(const char *overview[],
             // Using modulus dirs?
             if ( G_conf.MsgModDirs() ) 
             {
-                path = Dirname();                       // "/path/fltk/general"
-                path += "/";                            // "/path/fltk/general/"
-                path += ultoa((msgnum/1000)*1000);      // "/path/fltk/general/1000"
+                path = Dirname();                    // "/path/fltk/general"
+                path += "/";                         // "/path/fltk/general/"
+                path += ultos((msgnum/1000)*1000);   // "/path/fltk/general/1000"
 
                 // See if modulus directory exists -- if not, create
                 struct stat sbuf;
@@ -731,14 +784,14 @@ int Group::Post(const char *overview[],
                     Unlock(plock);
                     return(-1);
                 }
-                path += "/";            // "/path/fltk/general/1000/"
-                path += ultoa(msgnum);  // "/path/fltk/general/1000/1999"
+                path += "/";           // "/path/fltk/general/1000/"
+                path += ultos(msgnum); // "/path/fltk/general/1000/1999"
             }
             else
             {
-                path = Dirname();       // "/path/fltk/general"
-                path += "/";            // "/path/fltk/general/"
-                path += ultoa(msgnum);  // "/path/fltk/general/1999"
+                path = Dirname();      // "/path/fltk/general"
+                path += "/";           // "/path/fltk/general/"
+                path += ultos(msgnum); // "/path/fltk/general/1999"
             }
 
 	    if ((fd = open(path.c_str(), O_CREAT|O_EXCL|O_WRONLY, 0644)) == -1)
@@ -772,37 +825,39 @@ int Group::Post(const char *overview[],
 	}
 
 	// HEADERS ADDED BY NEWS SERVER
-	char misc[LINE_LEN];
-	sprintf(misc, "Xref: %s %s:%lu",
-	    (const char*)G_conf.ServerName(),
-	    (const char*)postgroup,
-	    (unsigned long)msgnum);
-	head.push_back(misc);
+	{
+	    ostringstream os;
+	    os << "Xref: " << G_conf.ServerName()
+	       << " " << postgroup << ":" << msgnum;
+	    head.push_back(os.str());
+	}
+	{
+	    ostringstream os;
+	    os << "Date: " << DateRFC822();
+	    head.push_back(os.str());
+	}
+	{
+	    ostringstream os;
+	    os << "NNTP-Posting-Host: " << remoteip_str;
+	    head.push_back(os.str());
+	}
 
-	sprintf(misc, "Date: %s", 
-	    (const char*)DateRFC822());
-	head.push_back(misc);
-
-	sprintf(misc, "NNTP-Posting-Host: %s", 
-	    (const char*)remoteip_str);
-	head.push_back(misc);
-
-        // Only set Message-ID: if client didn't specify it
-	if ( GetHeaderValue(head, "Message-ID:") == NULL )
+        // Only set Message-ID: if client /didn't/ specify it
+	string value;
+	if ( GetHeaderValue(head, "Message-ID:", value) == -1 )
         {
-            sprintf(misc, "Message-ID: <%lu-%s@%s>",
-                (unsigned long)msgnum,
-                (const char*)postgroup,
-                (const char*)G_conf.ServerName());
-            head.push_back(misc);
+	    ostringstream os;
+	    os << "Message-ID: <" << msgnum << "-" << postgroup
+	       << "@" << G_conf.ServerName() << ">";
+	    head.push_back(os.str());
         }
 
-        // Only set Lines: if client didn't specify it
-	if ( GetHeaderValue(head, "Lines:") == NULL )
+        // Only set Lines: if client /didn't/ specify it
+	if ( GetHeaderValue(head, "Lines:", value) == -1 )
         {
-            sprintf(misc, "Lines: %u",
-                (unsigned int)body.size());
-            head.push_back(misc);
+	    ostringstream os;
+	    os << "Lines: " << body.size();
+            head.push_back(os.str());
         }
 
 	// DONT DO THIS -- MESSES UP MULTILINE FIELDS
@@ -1078,27 +1133,32 @@ int Group::IsValidGroup()
 
 // RETURN VALUE FOR SPECIFIED HEADER
 //    'fieldname' is a header field name, e.g. "Message-ID:".
-//    The trailing : must be included.
-//    Returns value as const char*, or NULL if field not found.
+//    The trailing : in 'fieldname' must be included.
+//
+//    Returns 0 on success with 'value' continaing the field's value.
+//    Returns -1 on failure with 'value' unchanged.
 //
 //    The search for 'fieldname' will be case insensitive (RFC 1036).
 //    Example: news clients can generate either "Message-ID" or "Message-Id".
 //
-const char* Group::GetHeaderValue(vector<string> &header, const char *fieldname) const
+int Group::GetHeaderValue(vector<string> &header,
+			  const char *fieldname,
+			  string& value) const
 {
     int len = strlen(fieldname);
     for ( uint t=0; t<header.size(); t++ )
     {
         if ( strncasecmp(header[t].c_str(), fieldname, len) == 0 )
         {
-            const char *value = header[t].c_str() + len;           // "Message-ID: <foo>" -> " <foo>"
-            while ( *value && isspace(*value & 255) ) ++value;     // " <foo>" -> "<foo>"
-	    // printf("DEBUG: found '%s', value='%s'\n", fieldname, value);
-            return value;
+            const char *vp = header[t].c_str() + len;     // "Message-ID: <foo>" -> " <foo>"
+            while ( *vp && isspace(*vp & 255) ) ++vp;     // " <foo>" -> "<foo>"
+	    // printf("DEBUG: found '%s', value='%s'\n", fieldname, vp);
+	    value = vp;
+            return 0;
         }
     }
     // printf("DEBUG: NOT FOUND '%s'\n", fieldname);
-    return NULL;
+    return -1;
 }
 
 // RETURN head[] INDEX FOR SPECIFIED HEADER

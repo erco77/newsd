@@ -49,6 +49,12 @@
 #include "VERSION.H"
 using namespace std;	// for clang, must appear after std #include's 
 
+#if defined(__APPLE__) && defined(__clang__)
+ // Apple + clang doesn't have these
+ typedef unsigned long ulong;
+ typedef unsigned int uint;
+#endif
+
 // Constants...
 #define LINE_LEN	4096
 #define GROUP_MAX	1024

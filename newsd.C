@@ -204,7 +204,7 @@ void DeadLetter(const char *errmsg, vector<string>&head, vector<string>&body)
 int MailGateway(const char *groupname)
 {
     Group group;
-    if ( group.Load(groupname) < 0 )
+    if ( group.LoadInfo(groupname) < 0 )
     {
 	fprintf(stderr, "newsd: Unknown group \"%s\": %s\n", groupname,
                 group.Errmsg());

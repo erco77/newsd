@@ -435,7 +435,7 @@ void Configuration::FixNewsLogDir(const char* newslogdir)
 		fprintf(stderr,
 		    "newsd: Can't change perms on log directory '%s': "
 		    "chown(%s,%lu,%lu) failed: %s\n",
-		    newslogdir, newslogdir, (unsigned long)UID(), (unsigned long)GID(), strerror(errno));
+		    newslogdir, newslogdir, (ulong)UID(), (ulong)GID(), strerror(errno));
 	    }
 	}
     }
@@ -609,8 +609,8 @@ int Configuration::Rotate(bool force)
 	    return(-1);
 	}
 
-	// fprintf(stderr, "LOG SIZE CHECK: %lu <= %lu\n",		//DEBUG
-	//     (unsigned long)buf.st_size, (unsigned long)maxlogsize);	//DEBUG
+	// fprintf(stderr, "LOG SIZE CHECK: %lu <= %lu\n",  //DEBUG
+	//     (ulong)buf.st_size, (ulong)maxlogsize);	    //DEBUG
 
         // Log too small? ignore
 	if ( buf.st_size <= maxlogsize )
@@ -628,7 +628,7 @@ int Configuration::Rotate(bool force)
 	{
             char junk[256];
 	    snprintf(junk, sizeof(junk), " (uid=%lu euid=%lu)",
-	        (unsigned long)getuid(), (unsigned long)geteuid());
+	        (ulong)getuid(), (ulong)geteuid());
 	    msg += junk;
 	}
 

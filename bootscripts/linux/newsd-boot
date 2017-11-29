@@ -22,12 +22,13 @@ case "$1" in
 	$ECHO -n "newsd start: "; 
 	logger -t newsd "nntp daemon started by '$0 $1'"
 	/usr/sbin/newsd
+	$ECHO ok
 	;;
 
     'stop')
 	# STOP THE DAEMON -- ATTEMPT CLEAN SHUTDOWN
 	$ECHO -n "newsd stop: " ; 
-	killall newsd
+	killall /usr/sbin/newsd		# avoid killing self during '$0 restart'
 	logger -t newsd "nntp daemon stopped by '$0 $1'"
 	$ECHO ok
 	;;
