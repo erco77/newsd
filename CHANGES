@@ -2,6 +2,7 @@ newsd -- Change Log
 -------------------
 
 1.50 -- November 28, 2017
+        - Fixed problem with multiline subjects not preserving whitespace at split
         - Don't rewrite Message-ID if supplied by client
         - Article search now starts with recent messages
         - Article search now handles new modulus dirs
