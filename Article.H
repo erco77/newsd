@@ -60,7 +60,6 @@ class Article
 	errmsg     = o.errmsg;
     }
 
-    string _ArticlePath(ulong num);
     int    _ParseHeader(string& key, string& val);
 
 public:
@@ -117,6 +116,9 @@ public:
     // send article body only
     int SendBody(int fd);
     string Overview(const char *overview[]);
+
+    // Return path to specified article in specified group
+    static string GetArticlePath(const char* group, ulong artnum);
 };
 
 #endif /*!ARTICLE_H*/

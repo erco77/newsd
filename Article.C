@@ -60,21 +60,24 @@ static void SplitKeyValue(char *s, string& key, string& val)
 }
 
 // CREATE ABSOLUTE PATHNAME TO THE GROUP
-//     e.g. "/var/spool/news/rush/general/1234"
+// On entry:
+//     group -- e.g. "rush.general"
+//     artnum -- e.g. 1234
+// Returns:
+//     Full path to article, e.g. "/var/spool/news/rush/general/1000/1234"
 //
-string Article::_ArticlePath(ulong num)
+string Article::GetArticlePath(const char* group, ulong artnum)
 {
     // rush.general -> rush/general
-    string pathgroup = group; 
+    string pathgroup = group;
     replace(pathgroup.begin(), pathgroup.end(), '.', '/');
     if ( G_conf.MsgModDirs() )
-        return(string(G_conf.SpoolDir()) + string("/") +        // "/spooldir/fltk/general/1000/1999
+        return(string(G_conf.SpoolDir()) + string("/") +        // "/spooldir/rush/general/1000/1234"
                pathgroup + string("/") +
-               ultos((number/1000)*1000) + "/" +
-               ultos(number));
+               ultos((artnum/1000)*1000) + "/" + ultos(artnum));
     else
-        return(string(G_conf.SpoolDir()) + string("/") +
-               pathgroup + string("/") + ultos(number));
+        return(string(G_conf.SpoolDir()) + string("/") +	// "/spooldir/rush/general/1234"
+               pathgroup + string("/") + ultos(artnum));
 }
 
 // PARSE HEADER INTO CLASS
@@ -127,7 +130,7 @@ int Article::Load(const char *groupname, ulong num)
 
     group = groupname;
 
-    filename = _ArticlePath(number);
+    filename = GetArticlePath(groupname, number);
 
     FILE *fp = fopen(filename.c_str(), "r");
     if ( fp == NULL )

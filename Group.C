@@ -444,32 +444,6 @@ int Group::WriteString(FILE *fp, const string& buf)
     return(0);
 }
 
-// RETURN ABSOLUTE PATHNAME TO ARTICLE#
-//     Returns path to artcile# in 'artnum'.
-//    
-string Group::GetPathForArticle(ulong artnum)
-{
-    string apath = Dirname();		// path to the article
-    apath += "/";
-
-    // Using modulus dirs?
-    if ( G_conf.MsgModDirs() )
-    {
-        // Include extra directory name..
-        apath += ultos((artnum/1000)*1000);
-	apath += "/";
-	apath += ultos(artnum);		// "/path/fltk/general/1000/1234"
-    }
-    else
-    {
-       apath += ultos(artnum);		// "/path/fltk/general/1234"
-    }
-
-    //DEBUG G_conf.LogMessage(L_DEBUG, "Group::PathToArticle(%ld): %s", artnum, apath.c_str());
-
-    return apath;
-}
-
 // RETURN THE "Message-ID" FOR ARTICLE IN A GROUP
 //     'group' is the group to search (e.g. "fltk.general"),
 //     'artnum' is the article# to get Message-ID for.
@@ -481,7 +455,7 @@ string Group::GetPathForArticle(ulong artnum)
 //
 int Group::GetMessageID(ulong artnum, string& msgid)
 {
-    string apath = GetPathForArticle(artnum);
+    string apath = Article::GetArticlePath(Name(), artnum);
 
     FILE *fp;
     int ret = -1;			// assume failure unless successful
@@ -925,9 +899,9 @@ int Group::NewGroup()
     if ( postok )
     {
         fprintf(stderr,
-	    "\nMaximum #lines for postings, '0' if no max (default=1000):\n");
+	    "\nMaximum #lines for postings, '0' if no max (default=0):\n");
         if ( fgets(in, sizeof(in)-1, stdin) == NULL ) return(1);
-        if ( sscanf(in, "%d", &i) != 1 ) i = 1000;
+        if ( sscanf(in, "%d", &i) != 1 ) i = 0;
         postlimit = i;
     }
     else

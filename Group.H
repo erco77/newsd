@@ -24,7 +24,7 @@
 #define GROUP_H
 
 #include "everything.H"
-
+#include "Article.H"		/* e.g. Article::GetArticlePath() */
 class Group
 {
     // ".info" FILE DATA
@@ -151,7 +151,6 @@ public:
     int NewGroup();
 
     // Articles
-    string GetPathForArticle(ulong artnum);
     int GetMessageID(ulong artnum, string& msgid);
     int ParseArticle(string &msg, vector<string>&head, vector<string>&body);
     int FindArticleByMessageID(const char *find_messageid, ulong &articlenum);
