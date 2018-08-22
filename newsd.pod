@@ -181,7 +181,8 @@ There are probably ways to cause a denial of service.
 
 =head1 REPORTING BUGS
 
-Report bugs using the form at "http://www.easysw.com/~mike/newsd/".
+Report bugs using the github issue page for the newsd project:
+https://github.com/erco77/newsd/issues
 
 =head1 SUPPORTED NEWS READERS
 
