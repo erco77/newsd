@@ -49,8 +49,8 @@ newsd:  newsd.o Subs.o Article.o Configuration.o Group.o Server.o
 
 # Build man pages
 man: newsd.pod newsd.conf.pod
-	$(POD2MAN) --section=8 newsd.pod      | $(NROFF) -man > newsd.8
-	$(POD2MAN) --section=8 newsd.conf.pod | $(NROFF) -man > newsd.conf.8
+	$(POD2MAN) --section=8 newsd.pod      > newsd.8
+	$(POD2MAN) --section=8 newsd.conf.pod > newsd.conf.8
 
 # Build html pages
 html: newsd.pod newsd.conf.pod
