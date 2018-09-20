@@ -1,6 +1,9 @@
 newsd -- Change Log
 -------------------
 
+1.51 -- September 19, 2018
+	- Added -preserve-date flag (to gateway git commits with comit dates)
+
 1.50 -- November 28, 2017
         - Fixed problem with multiline subjects not preserving whitespace at split
         - Don't rewrite Message-ID if supplied by client
