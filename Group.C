@@ -619,7 +619,8 @@ int Group::Post(const char *overview[],
 		vector<string> &head,
 		vector<string> &body,
 		const char *remoteip_str,
-		bool force_post)
+		bool force_post,
+		bool preservedate)		// 0=rewrite date, true=preserve original date
 {
     string postgroup;
     if ( GetHeaderValue(head, "Newsgroups:", postgroup) == -1 )
@@ -684,6 +685,7 @@ int Group::Post(const char *overview[],
 	// OPEN NEW ARTICLE
 	ulong msgnum = 0;
 	int fd;
+	bool dateflag = 0;
 	for ( msgnum=End() + 1; 1; msgnum++ )
 	{
             // Build path to article
@@ -752,10 +754,14 @@ int Group::Post(const char *overview[],
 	{
 	    int index;
 
-	    // Remove Date: (if any)
+	    // Date?
 	    if ( ( index = GetHeaderIndex(head, "Date:") ) != -1 )
-	        { head.erase( head.begin() + index); }
-
+	    {
+		dateflag = true;				// found original date
+		if ( ! preservedate )				// rewrite date? (not preserving)
+		    // Remove Date: (if any)
+		    { head.erase( head.begin() + index); }	// remove
+	    }
 	    // Remove NNTP-Posting-Host: (if any)
 	    if ( ( index = GetHeaderIndex(head, "NNTP-Posting-Host:") ) != -1 )
 	        { head.erase( head.begin() + index); }
@@ -768,10 +774,11 @@ int Group::Post(const char *overview[],
 	       << " " << postgroup << ":" << msgnum;
 	    head.push_back(os.str());
 	}
+	if ( ! preservedate || ! dateflag )
 	{
 	    ostringstream os;
 	    os << "Date: " << DateRFC822();
-	    head.push_back(os.str());
+	    head.push_back(os.str());		// add date if not preserving or no Date was found
 	}
 	{
 	    ostringstream os;

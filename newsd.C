@@ -88,10 +88,10 @@ void HelpAndExit()
           "        See LICENSE file packaged with newsd for license/copyright info.\n"
           "\n"
 	  "Usage:\n"
-          "    newsd [-c configfile] [-d] [-f] -- start server\n"
-	  "    newsd -mailgateway <group>      -- used in /etc/aliases\n"
-	  "    newsd -newgroup                 -- used to create new groups\n"
-	  "    newsd -rotate                   -- force log rotation\n",
+          "    newsd [-c configfile] [-d] [-f]             -- start server\n"
+	  "    newsd -mailgateway <group> [-preserve-date] -- gateway an email (stdin) into specified <group>\n"
+	  "    newsd -newgroup                             -- used to create new groups\n"
+	  "    newsd -rotate                               -- force log rotation\n",
 	  stderr);
     exit(1);
 }
@@ -201,7 +201,8 @@ void DeadLetter(const char *errmsg, vector<string>&head, vector<string>&body)
 // HANDLE GATEWAYING MAIL INTO THE NEWSGROUP
 //    Reads email message from stdin.
 //
-int MailGateway(const char *groupname)
+int MailGateway(const char *groupname,
+		bool preservedate=0)
 {
     Group group;
     if ( group.LoadInfo(groupname) < 0 )
@@ -308,7 +309,7 @@ int MailGateway(const char *groupname)
     // POST ARTICLE
     //    Don't affect 'current group' or 'current article'.
     //
-    if ( group.Post(overview, head, body, "localhost", true) < 0 )
+    if ( group.Post(overview, head, body, "localhost", true, preservedate) < 0 )
     {
 	fprintf(stderr, "newsd: Article not posted to %s: %s.\n",
 	        groupname, group.Errmsg());
@@ -410,7 +411,8 @@ int main(int argc, const char *argv[])
     int newgroup = 0;
     int dodebug = 0,
         dofork = 1,
-        dorotate = 0;
+        dorotate = 0,
+	preservedate = 0;	// default: server rewrites date
 
     // Scan command-line...
     for (int t = 1; t < argc; t ++)
@@ -442,6 +444,8 @@ int main(int argc, const char *argv[])
             mailgateway = argv[t];
 	    dofork      = 0;
 	}
+        else if (!strcmp(argv[t], "-preserve-date"))
+	    { preservedate = 1; }
         else if (!strcmp(argv[t], "-newgroup"))
 	    { newgroup = 1; dofork = 0; }
         else if (!strcmp(argv[t], "-rotate"))
@@ -472,7 +476,7 @@ int main(int argc, const char *argv[])
     {
 	if (RunAs()) return(1);
 
-	return(MailGateway(mailgateway));
+	return(MailGateway(mailgateway, preservedate));
     }
     else if (newgroup)
     {

@@ -687,10 +687,9 @@ void Configuration::LogMessage(int l, const char *m, ...)
     // Format the message...
     va_list      ap;			// Argument list pointer
     char         buffer[1024];		// Message buffer
-    unsigned int bytes;			// Size of message
 
     va_start(ap, m);
-    bytes = vsnprintf(buffer, sizeof(buffer), m, ap);
+    vsnprintf(buffer, sizeof(buffer), m, ap);
     va_end(ap);
 
     // Send it to the log file or syslog...

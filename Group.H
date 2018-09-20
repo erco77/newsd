@@ -145,7 +145,8 @@ public:
     int LoadInfo(string& group, int dolock = 1) { return LoadInfo(group.c_str(), dolock); }
     int WriteInfo(int fd);
     int Post(const char*overview[], vector<string> &head, 
-    	     vector<string> &body, const char *remoteip_str, bool force=false);
+    	     vector<string> &body, const char *remoteip_str, 
+	     bool force=false, bool preservedate=false);
     const char* Dirname();
 
     int NewGroup();
