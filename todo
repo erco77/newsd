@@ -1,0 +1,7 @@
+TODO LIST
+
+> Add 'newsd -logreopen' so that logrotate.conf can use as a 'postrotate' command
+
+> Add an optional number flag to '-logrotate' so #rotations saved can be specified (.1, .2, etc)
+
+> Change debug flags to use letters instead of magnitude values (like mailrecv)

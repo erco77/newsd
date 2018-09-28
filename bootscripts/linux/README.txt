@@ -37,13 +37,32 @@ and verified it runs OK by testing it from a shell with:
 
             tail -f /var/log/newsd.log
 
-    5. Configure a weekly cron entry to rotate the log.
-       Add this entry to your /etc/crontab
+    5. Configure log to rotate out weekly:
 
-	    5 0 * * 0   root  ( /usr/sbin/newsd -rotate 2>&1 ) | logger -t newsd
+       Do only *one* of these; which you choose depends on your
+       preferred technique.
 
-       ..This rotates the log every Sunday morning at 12:05am.
-       Any errors from this operation are added to the system log.
+       5a) LOGROTATE.CONF APPROACH
+           -----------------------
+           Create the file /etc/logrotate.d/newsd:
+
+               # Newsd log rotations
+               /var/log/newsd.log {
+                  rotate 5
+                  weekly
+                  postrotate
+                      /etc/init.d/newsd restart        # TODO: Need to add a "-logreopen" flag to newsd
+                  endscript
+               }
+
+       5b) CRONTAB APPROACH
+           ----------------
+           Add this entry to your /etc/crontab
+
+               5 0 * * 0   root  ( /usr/sbin/newsd -rotate 2>&1 ) | logger -t newsd
+
+           ..This rotates the log every Sunday morning at 5:00am.
+           Any errors from this operation are added to the system log.
 
     6. That's it.
 
