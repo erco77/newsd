@@ -490,7 +490,7 @@ int Group::ReadLock()
 {
     string lockpath = Dirname();
     lockpath += "/.lock";
-    int fd = open(lockpath.c_str(), O_CREAT|O_WRONLY, 0644);
+    int fd = open(lockpath.c_str(), O_CREAT|O_WRONLY, 0666);
     if ( fd < 0 )
     {
         errmsg = lockpath;
@@ -516,7 +516,7 @@ int Group::WriteLock()
 {
     string lockpath = Dirname();
     lockpath += "/.lock";
-    int fd = open(lockpath.c_str(), O_CREAT|O_WRONLY, 0644);
+    int fd = open(lockpath.c_str(), O_CREAT|O_WRONLY, 0666);
     if ( fd < 0 )
     {
         errmsg = lockpath;
@@ -733,7 +733,7 @@ int Group::Post(const char *overview[],
                 path += ultos_SUBS(msgnum); // "/path/fltk/general/1999"
             }
 
-	    if ((fd = open(path.c_str(), O_CREAT|O_EXCL|O_WRONLY, 0644)) == -1)
+	    if ((fd = open(path.c_str(), O_CREAT|O_EXCL|O_WRONLY, 0666)) == -1)
 	    {
 		if ( errno == EEXIST )
 		    { continue; }		// try next article number

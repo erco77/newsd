@@ -1079,6 +1079,17 @@ int Server::Listen()
 	    { errmsg = "setsockopt(SO_REUSEADDR): "; errmsg += strerror(errno); return(-1); }
     }
 
+    // Enable KEEPALIVE
+    //    Without this, server can have numerous ESTABLISHED connections (netstat -nato)
+    //    that are not seen on the client, e.g. if client goes to sleep (closing lid on laptop).
+    //    KEEPALIVE detects if the client is no longer there, and drops connection.
+    //
+    {
+        int on = 1;
+	if ( setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(int)) < 0 )
+	    { errmsg = "setsockopt(SO_KEEPALIVE): "; errmsg += strerror(errno); return(-1); }
+    }
+
     while (bind(sock, (struct sockaddr*)G_conf.Listen(),
                 sizeof(struct sockaddr_in)) < 0) 
 	{ perror("binding stream socket"); sleep(5); continue; }

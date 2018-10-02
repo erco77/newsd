@@ -403,7 +403,7 @@ int main(int argc, const char *argv[])
     signal(SIGCHLD, sigcld_handler);
     signal(SIGPIPE, SIG_IGN);
     signal(SIGALRM, SIG_IGN);
-    umask(022);		// enforce rw-r--r-- perms
+    // umask(022);		// Let the boot script determine this
 
     Server server;
     const char *conffile = CONFIG_FILE;
