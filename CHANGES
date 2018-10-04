@@ -1,6 +1,8 @@
 newsd -- Change Log
 -------------------
 
+1.52 -- October 4, 2018
+
 1.51 -- September 19, 2018
 	- Added -preserve-date flag (to gateway git commits with comit dates)
 

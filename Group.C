@@ -52,7 +52,7 @@ int Group::SaveInfo(int dolock)
 
     // WRITE OUT INFO FILE
     int ilock = -1;
-    if ( dolock ) { ilock = WriteLock(); }
+    if ( dolock ) { if ( (ilock = WriteLock()) == -1 ) return -1; }
     {
 	FILE *fp = fopen(path.c_str(), "w");
 	if ( fp == NULL )
@@ -86,7 +86,7 @@ int Group::BuildInfo(int dolock)
 {
     int wlock = -1;
     int ret = 0;
-    if ( dolock ) { wlock = WriteLock(); }
+    if ( dolock ) { if ( (wlock = WriteLock()) == -1 ) return -1; }
 
     start = 0;
     end   = 0;
@@ -206,7 +206,7 @@ int Group::LoadInfo(int dolock)
     }
 
     int ilock = -1;
-    if ( dolock ) { ilock = ReadLock(); }
+    if ( dolock ) { if ( (ilock = ReadLock()) == -1 ) return -1; }
     {
 	char buf[LINE_LEN];
 	while ( fgets(buf, sizeof(buf), fp) )
@@ -248,7 +248,7 @@ int Group::LoadConfig(int dolock)
     }
 
     int ilock = -1;
-    if ( dolock ) { ilock = ReadLock(); }
+    if ( dolock ) { if ( (ilock = ReadLock()) == -1 ) return -1; }
     {
 	char buf[LINE_LEN];
 	char arg[256];
@@ -628,7 +628,7 @@ int Group::Post(const char *overview[],
 
     // LOCK FOR POSTING
     Name(postgroup);
-    int plock = WriteLock();
+    int plock; if ( (plock = WriteLock()) == -1 ) return -1;
     {
 	// LOAD INFO FOR THIS GROUP
 	if ( LoadInfo(postgroup, 0) < 0 )
