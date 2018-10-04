@@ -10,7 +10,7 @@ newsd - erco's simple nntp news server
 
 =item B<newsd> [ -c I<config-file> ] [ -d ] [ -f ]
 
-=item B<newsd> -mailgateway I<group>
+=item B<newsd> -mailgateway  [-preserve-date] I<group>
 
 =item B<newsd> -newgroup
 
@@ -54,6 +54,11 @@ functions.
 
 Used in /etc/aliases to gateway emails to a newsgroup. 
 See L<Configuring a Mail Gateway> below.
+
+=item -preserve-date
+
+Use only with -mailgateway, this option causes newsd to honor the Date:
+field of the incoming message, instead of rewriting it with the current date.
 
 =item -newgroup
 
