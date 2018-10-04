@@ -2,6 +2,14 @@ newsd -- Change Log
 -------------------
 
 1.52 -- October 4, 2018
+        - Added KEEPALIVE to TCP connections
+	- Fixed problem with -mailgateway, where lock errors weren't causing
+	  newsd to report a non-zero exit code
+        - Removed umask and forced mode bits on files, so that now:
+		> Bootscript can control newsd's umask in daemon mode
+		  (by setting it before starting newsd)
+		> Shell scripts invoking 'newsd -mailgateway' can also control
+		  newsd's umask for created files
 
 1.51 -- September 19, 2018
 	- Added -preserve-date flag (to gateway git commits with comit dates)
