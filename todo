@@ -1,5 +1,12 @@
 TODO LIST
 
+> Add an error counter and configurable 'max errors', so that too many errors
+  close the connection.  Bots try probing for the entire usenet hierarchy with
+  a bunch of GROUP commands. Should give 'Too many errors. Goodbye.'
+
+  Either that, or setup a fail2ban that monitors the log for too many 
+  specific errors, and bans the remote IP.
+
 > Add 'newsd -logreopen' so that logrotate.conf can use as a 'postrotate' command
 
 > Add an optional number flag to '-logrotate' so #rotations saved can be specified (.1, .2, etc)

@@ -549,7 +549,8 @@ int main(int argc, const char *argv[])
     // ACCEPT NEW CONNECTIONS LOOP
     for (;;)
     {
-        if (server.Accept() < 0)
+        ostringstream remote_msg;
+        if (server.Accept(remote_msg) < 0)
 	{
 	    G_conf.LogMessage(L_ERROR, "Unable to accept new connection: %s",
 	                      server.Errmsg());
@@ -572,7 +573,8 @@ int main(int argc, const char *argv[])
 	pid_t pid;
 	while ((pid = fork()) == -1)
 	{
-	    G_conf.LogMessage(L_ERROR, "Unable to fork handler process: %s",
+	    G_conf.LogMessage(L_ERROR, "%s", remote_msg.str().c_str());	// remote info first
+	    G_conf.LogMessage(L_ERROR, "Unable to fork handler process: %s", // fork error after
 	                      strerror(errno));
 	    sleep(10);
         }
@@ -582,7 +584,8 @@ int main(int argc, const char *argv[])
 	switch (pid)
 	{
 	    case 0 :	// CHILD
-	        G_conf.ErrorLog(G_conf.ErrorLog());
+	        //G_conf.ErrorLog(G_conf.ErrorLog());				// 07/13/22: commented out - fork() already makes a copy separate from parent
+		G_conf.LogMessage(L_ERROR, "%s", remote_msg.str().c_str());	// show remote info AFTER fork(), to ensure pid of "Connection from" matches subsequent msgs
 		server.CommandLoop(overview);
 		exit(0);
 

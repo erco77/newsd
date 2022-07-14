@@ -248,7 +248,8 @@ int Server::CommandLoop(const char *overview[])
 	if ( ! found )
 	    { break; }
 
-	G_conf.LogMessage(L_INFO, "GOT: %s", s);
+        string remhost = GetRemoteIPStr();
+	G_conf.LogMessage(L_INFO, "GOT: '%s' from %s", s, remhost.c_str());
 
 	arg1[0] = arg2[0] = 0;
 	if ( sscanf(s, "%s%s%s", cmd, arg1, arg2) < 1 )
@@ -1101,7 +1102,7 @@ int Server::Listen()
 }
 
 // ACCEPT CONNECTIONS FROM REMOTE
-int Server::Accept()
+int Server::Accept(ostringstream& remote_info)
 {
 //    fprintf(stderr, "Listening for connect requests on port %d\n", 
 //        (int)port);
@@ -1124,9 +1125,10 @@ int Server::Accept()
 	return(-1);
     }
 
-    G_conf.LogMessage(L_INFO, "Connection from host %s, port %u",
-		      (const char*)inet_ntoa(sin.sin_addr),
-		      (int)ntohs(sin.sin_port));
+    remote_info << "Connection from host "
+                << inet_ntoa(sin.sin_addr)
+                << ", port "
+                << ntohs(sin.sin_port);
 
     return (0);
 }

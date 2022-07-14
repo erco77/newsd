@@ -832,7 +832,12 @@ int Group::Post(const char *overview[],
 	End(msgnum);
 	Total(Total()+1);
 
-	SaveInfo(0);
+	// Update .info file
+	if ( SaveInfo(0) < 0 )
+	{
+	    Unlock(plock);
+	    return(-1);
+	}
     }
     Unlock(plock);
     return(0);

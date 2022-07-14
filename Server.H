@@ -69,7 +69,7 @@ public:
 
     // TCP CONNECTIONS
     int Listen();
-    int Accept();
+    int Accept(ostringstream& remote_msg);
     int CommandLoop(const char *overview[]);
 };
 

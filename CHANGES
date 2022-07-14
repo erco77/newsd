@@ -1,6 +1,10 @@
 newsd -- Change Log
 -------------------
 
+1.53 -- July 13, 2022
+        - Change 'Connection from' message to show pid of child, not server.
+	- Include remote ip in all GOT messages, to help fail2ban filters
+
 1.52 -- October 4, 2018
         - Added KEEPALIVE to TCP connections
 	- Fixed problem with -mailgateway, where lock errors weren't causing
