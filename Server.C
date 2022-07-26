@@ -29,6 +29,43 @@
 #define ISIT(x)		if (!strcasecmp(cmd, x))
 #define ISHEAD(a)	(strncasecmp(head, (a), strlen(a))==0)
 
+// LOCAL: Return ASCII only version of string 's', with binary encoded as hex <0x##>
+//     NOTE: in the following, "ASCII" is defined as per RFC 822 4.1.2.
+//     (This code nabbed from mailrecv V1.12)
+//
+static char *AsciiHexEncode(const char *s, int allow_crlf=0) {
+    // First pass: determine how large output string needs to be
+    int outlen = 0;
+    const char *ss = s;
+    while ( *ss ) {
+        if ( *ss >= 0x20 && *ss <= 0x7e )   // Printable ASCII? (RFC 822 4.1.2)
+            { ++outlen; }                   // OK
+        else if ( allow_crlf && (*ss == '\r' || *ss == '\n') ) // CRLF allowed?
+            { ++outlen; }                   // OK
+        else
+            { outlen += 6; }                // 6 chars for every one binary char
+        ++ss;
+    }
+    ++outlen; // leave room for terminating NULL
+    char *buf = (char*)malloc(outlen);
+    char *out = buf;
+    ss = s;
+    while ( *ss ) {
+        if ( *ss >= 0x20 && *ss <= 0x7e )   // Printable ASCII?
+            { *out++ = *ss; }               // OK
+        else if ( allow_crlf && (*ss == '\r' || *ss == '\n') ) // CRLF allowed?
+            { *out++ = *ss; }               // OK
+        else {
+            sprintf(out, "<0x%02x>", (unsigned char)*ss);  // write hex code
+            out += 6;                       // move past hex code
+        }
+        ++ss;
+    }
+    *out = 0;
+    return buf;
+}
+
+
 // SENDS CRLF TERMINATED MESSAGE TO REMOTE
 int Server::Send(const char *msg)
 {
@@ -249,7 +286,17 @@ int Server::CommandLoop(const char *overview[])
 	    { break; }
 
         string remhost = GetRemoteIPStr();
-	G_conf.LogMessage(L_INFO, "GOT: '%s' from %s", s, remhost.c_str());
+	// LOG RECEIVED REMOTE COMMAND
+	{
+	    if ( G_conf.ErrorLog_Hex() ) {
+		// Handle if we should log any binary content in hex
+		char *line_safe = AsciiHexEncode(s);
+		G_conf.LogMessage(L_INFO, "GOT: '%s' from %s", line_safe, remhost.c_str());
+		free(line_safe);
+	    } else {
+		G_conf.LogMessage(L_INFO, "GOT: '%s' from %s", s, remhost.c_str());
+	    }
+	}
 
 	arg1[0] = arg2[0] = 0;
 	if ( sscanf(s, "%s%s%s", cmd, arg1, arg2) < 1 )

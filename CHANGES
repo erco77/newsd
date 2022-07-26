@@ -1,6 +1,12 @@
 newsd -- Change Log
 -------------------
 
+1.54 -- July 26, 2022
+        - Added ErrorLog.Hex to newsd.conf
+	  Translates non-ascii text messages from remote to <0x##> format
+	  Default: on
+	  (Helps fail2ban ignore control character garbage from remotes)
+
 1.53 -- July 13, 2022
         - Change 'Connection from' message to show pid of child, not server.
 	- Include remote ip in all GOT messages, to help fail2ban filters

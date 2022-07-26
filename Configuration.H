@@ -41,6 +41,7 @@ class Configuration
     int         msgmod_dirs;            // Use modulus msg dirs, eg. 100/{100,101,102..199}
     struct sockaddr_in listen;		// Listen address
     string	errorlog;		// Log file
+    int         errorlog_hex;           // Log non-ASCII chars in hex, e.g. <0x##>
     int		loglevel;		// Log level
     FILE	*log;			// Stream for logging
     ino_t	log_ino;		// Inode # for log (detects rotation)
@@ -84,6 +85,10 @@ public:
     // Get/set the current LogFile option...
     void ErrorLog(const char *f) { errorlog = f; }
     const char *ErrorLog() { return (errorlog.c_str()); }
+
+    // Get/set the ErrorLog.Hex flag
+    void ErrorLog_Hex(int val) { errorlog_hex = val; }
+    int  ErrorLog_Hex() const { return (errorlog_hex); }
 
     // Get/set the current HostnameLookups option...
     void HostnameLookups(int h) { hostnamelookups = h; }

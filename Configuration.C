@@ -25,7 +25,6 @@
 #include <syslog.h>
 #include <limits.h>	/* UINT_MAX */
 
-
 // Initialize default configuration values...
 Configuration::Configuration()
 {
@@ -39,9 +38,10 @@ Configuration::Configuration()
 
     Listen(119);
 
-    log      = stderr;
-    errorlog = "stderr";
-    log_ino  = 0;
+    log          = stderr;
+    errorlog     = "stderr";
+    errorlog_hex = 1;		// default: on is good for fail2ban
+    log_ino      = 0;
 
     LogLevel(L_INFO);
 
@@ -269,6 +269,12 @@ void Configuration::Load(const char *conffile)
 	else if (!strcasecmp(name, "ErrorLog"))
 	{
 	    ErrorLog(value);
+	}
+	else if (!strcasecmp(name, "ErrorLog.Hex"))
+	{
+	         if (!strcasecmp(value, "off") || !strcasecmp(value, "no"))  ErrorLog_Hex(0);
+	    else if (!strcasecmp(value, "on")  || !strcasecmp(value, "yes")) ErrorLog_Hex(1);
+            else BAD_VALUE();
 	}
 	else if (!strcasecmp(name, "LogLevel"))
 	{
@@ -572,10 +578,9 @@ void Configuration::DateStampedMessage(FILE *fp, const char *msg)
     time(&secs);
     date = localtime(&secs);
     strftime(datestr, sizeof(datestr), "%c", date);
-
     fprintf(fp, "%s newsd[%d]: %s%s", 
             datestr, getpid(), msg,
-	    (msg[strlen(msg)-1] != '\n') ? "\n" : "");
+            (msg[strlen(msg)-1] != '\n') ? "\n" : "");
     fflush(fp);
 }
 
