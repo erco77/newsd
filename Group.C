@@ -491,7 +491,7 @@ int Group::ReadLock()
 {
     string lockpath = Dirname();
     lockpath += "/.lock";
-    int fd = open(lockpath.c_str(), O_CREAT|O_WRONLY, 0666);
+    int fd = open(lockpath.c_str(), O_CREAT|O_RDWR, 0666);
     if ( fd < 0 )
     {
         errmsg = lockpath;
